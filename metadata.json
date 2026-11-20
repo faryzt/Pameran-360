@@ -1,0 +1,8 @@
+{
+  "name": "Nusantara 360 — Galeri Karya Pelajar Indonesia",
+  "description": "Pameran karya virtual 360° interaktif dan hiper-realistis yang menampilkan lukisan 2D serta kerajinan 3D pelajar SD, SMP, dan SMA dari seluruh Nusantara.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
