@@ -27,7 +27,7 @@ export const ROOMS: Record<RoomId, RoomSpec> = {
     name: 'Ruang 1 · Gerbang Utama',
     shortName: 'Gerbang Utama',
     subtitle: 'Foyer utama pameran dengan 3 gerbang lengkung menuju ruang lukisan, kriya, dan wastra',
-    panoramaUrl: '/assets/aistudio/ruang1_gerbang_sd_360.jpg',
+    panoramaUrl: './assets/aistudio/ruang1_gerbang_sd_360.jpg',
     yawOffsetDeg: 0,
     defaultYawDeg: 0,
     repositoryYawDeg: 126,
@@ -67,7 +67,7 @@ export const ROOMS: Record<RoomId, RoomSpec> = {
     name: 'Ruang 2 · Galeri Lukisan',
     shortName: 'Galeri Lukisan',
     subtitle: 'Ruang pameran lukisan kanvas, lukis kaca, dan imajinasi warna Nusantara',
-    panoramaUrl: '/assets/aistudio/ruang2_lukisan_sd_360.jpg',
+    panoramaUrl: './assets/aistudio/ruang2_lukisan_sd_360.jpg',
     yawOffsetDeg: 0,
     defaultYawDeg: -15,
     repositoryYawDeg: 128,
@@ -107,7 +107,7 @@ export const ROOMS: Record<RoomId, RoomSpec> = {
     name: 'Ruang 3 · Hall Kriya',
     shortName: 'Hall Kriya',
     subtitle: 'Sayap barat dengan koleksi kriya ukir kayu, anyaman noken, angklung bambu, dan patung',
-    panoramaUrl: '/assets/aistudio/ruang3_kriya_sd_360.jpg',
+    panoramaUrl: './assets/aistudio/ruang3_kriya_sd_360.jpg',
     yawOffsetDeg: 0,
     defaultYawDeg: 0,
     repositoryYawDeg: 97,
@@ -147,7 +147,7 @@ export const ROOMS: Record<RoomId, RoomSpec> = {
     name: 'Ruang 4 · Galeri Wastra',
     shortName: 'Galeri Wastra',
     subtitle: 'Sayap timur dengan karya mozaik biji-bijian, kolase alam, batik jumputan, dan tenun',
-    panoramaUrl: '/assets/aistudio/ruang4_wastra_360.jpg',
+    panoramaUrl: './assets/aistudio/ruang4_wastra_360.jpg',
     yawOffsetDeg: 0,
     defaultYawDeg: 0,
     repositoryYawDeg: -94,
@@ -187,7 +187,7 @@ export const ROOMS: Record<RoomId, RoomSpec> = {
     name: 'Ruang 5 · Paviliun Puncak',
     shortName: 'Paviliun Puncak',
     subtitle: 'Paviliun kayu jati dengan diorama rumah adat, miniatur kapal Phinisi, dan Galeri Koleksi',
-    panoramaUrl: '/assets/aistudio/ruang5_repositori_360.jpg',
+    panoramaUrl: './assets/aistudio/ruang5_repositori_360.jpg',
     yawOffsetDeg: 0,
     defaultYawDeg: 0,
     repositoryYawDeg: 130,
@@ -307,7 +307,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'way_kambas',
     palettePrimary: '#1d4ed8',
     paletteSecondary: '#f59e0b',
-    imageUrl: '/assets/artworks/art-1.jpg',
+    imageUrl: './assets/artworks/art-1.jpg',
   },
   {
     id: 'art-2',
@@ -327,7 +327,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'topeng_madura',
     palettePrimary: '#b91c1c',
     paletteSecondary: '#fbbf24',
-    imageUrl: '/assets/artworks/art-2.jpg',
+    imageUrl: './assets/artworks/art-2.jpg',
   },
   {
     id: 'art-7',
@@ -347,7 +347,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'megamendung',
     palettePrimary: '#1d4ed8',
     paletteSecondary: '#38bdf8',
-    imageUrl: '/assets/artworks/art-7.jpg',
+    imageUrl: './assets/artworks/art-7.jpg',
   },
   {
     id: 'art-9',
@@ -367,7 +367,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'batik_kawung',
     palettePrimary: '#78350f',
     paletteSecondary: '#f59e0b',
-    imageUrl: '/assets/artworks/art-9.jpg',
+    imageUrl: './assets/artworks/art-9.jpg',
   },
   {
     id: 'art-5',
@@ -387,7 +387,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'ulos_batak',
     palettePrimary: '#0284c7',
     paletteSecondary: '#fde047',
-    imageUrl: '/assets/artworks/art-5.jpg',
+    imageUrl: './assets/artworks/art-5.jpg',
   },
 
   // ── RUANG 3: HALL KRIYA, KERAMIK & PATUNG SD (ruang3_kriya_sd_360.jpg) ────────
@@ -409,7 +409,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'tameng_dayak',
     palettePrimary: '#991b1b',
     paletteSecondary: '#fef08a',
-    imageUrl: '/assets/artworks/art-4.jpg',
+    imageUrl: './assets/artworks/art-4.jpg',
   },
   {
     id: 'art-6',
@@ -429,7 +429,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'noken_papua',
     palettePrimary: '#b45309',
     paletteSecondary: '#fde047',
-    imageUrl: '/assets/artworks/art-6.jpg',
+    imageUrl: './assets/artworks/art-6.jpg',
   },
   {
     id: 'art-12',
@@ -449,7 +449,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'keris_ukir',
     palettePrimary: '#713f12',
     paletteSecondary: '#eab308',
-    imageUrl: '/assets/artworks/art-12.jpg',
+    imageUrl: './assets/artworks/art-12.jpg',
   },
   {
     id: 'art-13',
@@ -469,7 +469,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'garuda_wisnu',
     palettePrimary: '#92400e',
     paletteSecondary: '#f59e0b',
-    imageUrl: '/assets/artworks/art-13.jpg',
+    imageUrl: './assets/artworks/art-13.jpg',
   },
 
   // ── RUANG 4: GALERI WASTRA, BATIK & MOZAIK SD (ruang4_wastra_360.jpg) ────────
@@ -491,7 +491,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'gringsing_bali',
     palettePrimary: '#0369a1',
     paletteSecondary: '#fde047',
-    imageUrl: '/assets/artworks/art-14.jpg',
+    imageUrl: './assets/artworks/art-14.jpg',
   },
   {
     id: 'art-15',
@@ -511,7 +511,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'songket_palembang',
     palettePrimary: '#991b1b',
     paletteSecondary: '#facc15',
-    imageUrl: '/assets/artworks/art-15.jpg',
+    imageUrl: './assets/artworks/art-15.jpg',
   },
   {
     id: 'art-11',
@@ -531,7 +531,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'tenun_sumba',
     palettePrimary: '#0369a1',
     paletteSecondary: '#fdba74',
-    imageUrl: '/assets/artworks/art-11.jpg',
+    imageUrl: './assets/artworks/art-11.jpg',
   },
 
   // ── RUANG 5: PAVILIUN PUNCAK & GALERI KOLEKSI SD (ruang5_repositori_360.jpg) ─
@@ -553,7 +553,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'rumah_gadang',
     palettePrimary: '#991b1b',
     paletteSecondary: '#facc15',
-    imageUrl: '/assets/artworks/art-8.jpg',
+    imageUrl: './assets/artworks/art-8.jpg',
   },
   {
     id: 'art-10',
@@ -573,7 +573,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'wayang_kulit',
     palettePrimary: '#b45309',
     paletteSecondary: '#fde047',
-    imageUrl: '/assets/artworks/art-10.jpg',
+    imageUrl: './assets/artworks/art-10.jpg',
   },
   {
     id: 'art-3',
@@ -593,7 +593,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'phinisi',
     palettePrimary: '#92400e',
     paletteSecondary: '#fde68a',
-    imageUrl: '/assets/artworks/art-3.jpg',
+    imageUrl: './assets/artworks/art-3.jpg',
   },
 
   // ── RUANG 1: GERBANG UTAMA KARYA SD (ruang1_gerbang_sd_360.jpg) ──────────────
@@ -615,7 +615,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'gerabah_kasongan',
     palettePrimary: '#9a3412',
     paletteSecondary: '#fdba74',
-    imageUrl: '/assets/artworks/art-18.jpg',
+    imageUrl: './assets/artworks/art-18.jpg',
   },
   {
     id: 'art-17',
@@ -635,7 +635,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'ondel_betawi',
     palettePrimary: '#dc2626',
     paletteSecondary: '#3b82f6',
-    imageUrl: '/assets/artworks/art-17.jpg',
+    imageUrl: './assets/artworks/art-17.jpg',
   },
   {
     id: 'art-16',
@@ -655,7 +655,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     motifType: 'sasando_rote',
     palettePrimary: '#d97706',
     paletteSecondary: '#fef3c7',
-    imageUrl: '/assets/artworks/art-16.jpg',
+    imageUrl: './assets/artworks/art-16.jpg',
   },
 ];
 
@@ -664,69 +664,69 @@ export const INITIAL_ARTWORKS: Artwork[] = [
  * and 12 repository archive items.
  */
 export const DEFAULT_ARTWORK_IMAGE_MAP: Record<string, string> = {
-  'art-1': '/assets/artworks/art-1.jpg',
-  'art-2': '/assets/artworks/art-2.jpg',
-  'art-3': '/assets/artworks/art-3.jpg',
-  'art-4': '/assets/artworks/art-4.jpg',
-  'art-5': '/assets/artworks/art-5.jpg',
-  'art-6': '/assets/artworks/art-6.jpg',
-  'art-7': '/assets/artworks/art-7.jpg',
-  'art-8': '/assets/artworks/art-8.jpg',
-  'art-9': '/assets/artworks/art-9.jpg',
-  'art-10': '/assets/artworks/art-10.jpg',
-  'art-11': '/assets/artworks/art-11.jpg',
-  'art-12': '/assets/artworks/art-12.jpg',
-  'art-13': '/assets/artworks/art-13.jpg',
-  'art-14': '/assets/artworks/art-14.jpg',
-  'art-15': '/assets/artworks/art-15.jpg',
-  'art-16': '/assets/artworks/art-16.jpg',
-  'art-17': '/assets/artworks/art-17.jpg',
-  'art-18': '/assets/artworks/art-18.jpg',
-  'repo-sd-1': '/assets/artworks/art-3.jpg',
-  'art-repo-1': '/assets/artworks/art-3.jpg',
-  'repo-sd-2': '/assets/artworks/art-repo-gringsing.jpg',
-  'art-repo-2': '/assets/artworks/art-repo-gringsing.jpg',
-  'repo-sd-3': '/assets/artworks/art-repo-wayang.jpg',
-  'art-repo-3': '/assets/artworks/art-repo-wayang.jpg',
-  'repo-sd-4': '/assets/artworks/art-repo-ulos.jpg',
-  'art-repo-4': '/assets/artworks/art-repo-ulos.jpg',
-  'repo-sd-5': '/assets/artworks/art-4.jpg',
-  'art-repo-5': '/assets/artworks/art-4.jpg',
-  'repo-sd-6': '/assets/artworks/art-8.jpg',
-  'art-repo-6': '/assets/artworks/art-8.jpg',
-  'repo-sd-7': '/assets/artworks/art-5.jpg',
-  'art-repo-7': '/assets/artworks/art-5.jpg',
-  'repo-sd-8': '/assets/artworks/art-18.jpg',
-  'art-repo-8': '/assets/artworks/art-18.jpg',
-  'repo-sd-9': '/assets/artworks/art-1.jpg',
-  'art-repo-9': '/assets/artworks/art-1.jpg',
-  'repo-sd-10': '/assets/artworks/art-2.jpg',
-  'art-repo-10': '/assets/artworks/art-2.jpg',
-  'repo-sd-11': '/assets/artworks/art-repo-songket.jpg',
-  'art-repo-11': '/assets/artworks/art-repo-songket.jpg',
-  'repo-sd-12': '/assets/artworks/art-repo-keris.jpg',
-  'art-repo-12': '/assets/artworks/art-repo-keris.jpg',
+  'art-1': './assets/artworks/art-1.jpg',
+  'art-2': './assets/artworks/art-2.jpg',
+  'art-3': './assets/artworks/art-3.jpg',
+  'art-4': './assets/artworks/art-4.jpg',
+  'art-5': './assets/artworks/art-5.jpg',
+  'art-6': './assets/artworks/art-6.jpg',
+  'art-7': './assets/artworks/art-7.jpg',
+  'art-8': './assets/artworks/art-8.jpg',
+  'art-9': './assets/artworks/art-9.jpg',
+  'art-10': './assets/artworks/art-10.jpg',
+  'art-11': './assets/artworks/art-11.jpg',
+  'art-12': './assets/artworks/art-12.jpg',
+  'art-13': './assets/artworks/art-13.jpg',
+  'art-14': './assets/artworks/art-14.jpg',
+  'art-15': './assets/artworks/art-15.jpg',
+  'art-16': './assets/artworks/art-16.jpg',
+  'art-17': './assets/artworks/art-17.jpg',
+  'art-18': './assets/artworks/art-18.jpg',
+  'repo-sd-1': './assets/artworks/art-3.jpg',
+  'art-repo-1': './assets/artworks/art-3.jpg',
+  'repo-sd-2': './assets/artworks/art-repo-gringsing.jpg',
+  'art-repo-2': './assets/artworks/art-repo-gringsing.jpg',
+  'repo-sd-3': './assets/artworks/art-repo-wayang.jpg',
+  'art-repo-3': './assets/artworks/art-repo-wayang.jpg',
+  'repo-sd-4': './assets/artworks/art-repo-ulos.jpg',
+  'art-repo-4': './assets/artworks/art-repo-ulos.jpg',
+  'repo-sd-5': './assets/artworks/art-4.jpg',
+  'art-repo-5': './assets/artworks/art-4.jpg',
+  'repo-sd-6': './assets/artworks/art-8.jpg',
+  'art-repo-6': './assets/artworks/art-8.jpg',
+  'repo-sd-7': './assets/artworks/art-5.jpg',
+  'art-repo-7': './assets/artworks/art-5.jpg',
+  'repo-sd-8': './assets/artworks/art-18.jpg',
+  'art-repo-8': './assets/artworks/art-18.jpg',
+  'repo-sd-9': './assets/artworks/art-1.jpg',
+  'art-repo-9': './assets/artworks/art-1.jpg',
+  'repo-sd-10': './assets/artworks/art-2.jpg',
+  'art-repo-10': './assets/artworks/art-2.jpg',
+  'repo-sd-11': './assets/artworks/art-repo-songket.jpg',
+  'art-repo-11': './assets/artworks/art-repo-songket.jpg',
+  'repo-sd-12': './assets/artworks/art-repo-keris.jpg',
+  'art-repo-12': './assets/artworks/art-repo-keris.jpg',
 };
 
 const MOTIF_FALLBACK_IMAGE_MAP: Record<string, string> = {
-  way_kambas: '/assets/artworks/art-1.jpg',
-  topeng_madura: '/assets/artworks/art-2.jpg',
-  phinisi: '/assets/artworks/art-3.jpg',
-  tameng_dayak: '/assets/artworks/art-4.jpg',
-  ulos_batak: '/assets/artworks/art-5.jpg',
-  noken_papua: '/assets/artworks/art-6.jpg',
-  megamendung: '/assets/artworks/art-7.jpg',
-  rumah_gadang: '/assets/artworks/art-8.jpg',
-  batik_kawung: '/assets/artworks/art-9.jpg',
-  wayang_kulit: '/assets/artworks/art-10.jpg',
-  tenun_sumba: '/assets/artworks/art-11.jpg',
-  keris_ukir: '/assets/artworks/art-12.jpg',
-  garuda_wisnu: '/assets/artworks/art-13.jpg',
-  gringsing_bali: '/assets/artworks/art-14.jpg',
-  songket_palembang: '/assets/artworks/art-15.jpg',
-  sasando_rote: '/assets/artworks/art-16.jpg',
-  ondel_betawi: '/assets/artworks/art-17.jpg',
-  gerabah_kasongan: '/assets/artworks/art-18.jpg',
+  way_kambas: './assets/artworks/art-1.jpg',
+  topeng_madura: './assets/artworks/art-2.jpg',
+  phinisi: './assets/artworks/art-3.jpg',
+  tameng_dayak: './assets/artworks/art-4.jpg',
+  ulos_batak: './assets/artworks/art-5.jpg',
+  noken_papua: './assets/artworks/art-6.jpg',
+  megamendung: './assets/artworks/art-7.jpg',
+  rumah_gadang: './assets/artworks/art-8.jpg',
+  batik_kawung: './assets/artworks/art-9.jpg',
+  wayang_kulit: './assets/artworks/art-10.jpg',
+  tenun_sumba: './assets/artworks/art-11.jpg',
+  keris_ukir: './assets/artworks/art-12.jpg',
+  garuda_wisnu: './assets/artworks/art-13.jpg',
+  gringsing_bali: './assets/artworks/art-14.jpg',
+  songket_palembang: './assets/artworks/art-15.jpg',
+  sasando_rote: './assets/artworks/art-16.jpg',
+  ondel_betawi: './assets/artworks/art-17.jpg',
+  gerabah_kasongan: './assets/artworks/art-18.jpg',
 };
 
 /**
@@ -735,7 +735,7 @@ const MOTIF_FALLBACK_IMAGE_MAP: Record<string, string> = {
 export function getDefaultArtworkImageUrl(
   artwork?: Partial<Pick<Artwork, 'id' | 'motifType' | 'category'>> | null,
 ): string {
-  if (!artwork) return '/assets/artworks/art-1.jpg';
+  if (!artwork) return './assets/artworks/art-1.jpg';
   if (artwork.id && DEFAULT_ARTWORK_IMAGE_MAP[artwork.id]) {
     return DEFAULT_ARTWORK_IMAGE_MAP[artwork.id];
   }
@@ -743,8 +743,8 @@ export function getDefaultArtworkImageUrl(
     return MOTIF_FALLBACK_IMAGE_MAP[artwork.motifType];
   }
   return artwork.category === 'Rak Display'
-    ? '/assets/artworks/art-repo-garuda.jpg'
-    : '/assets/artworks/art-9.jpg';
+    ? './assets/artworks/art-repo-garuda.jpg'
+    : './assets/artworks/art-9.jpg';
 }
 
 /**
@@ -763,15 +763,17 @@ export function resolveArtworkImageUrl(
     trimmed.startsWith('data:image/') ||
     trimmed.startsWith('blob:') ||
     trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('/')
+    trimmed.startsWith('https://')
   ) {
     return trimmed;
   }
   if (trimmed.startsWith('./')) {
-    return '/' + trimmed.slice(2);
+    return trimmed;
   }
-  return '/' + trimmed;
+  if (trimmed.startsWith('/')) {
+    return '.' + trimmed;
+  }
+  return './' + trimmed;
 }
 
 /**
@@ -785,7 +787,8 @@ export function isCustomArtworkImage(
   const trimmed = artwork.imageUrl.trim();
   if (!trimmed) return false;
   const canonical = getDefaultArtworkImageUrl(artwork);
-  return trimmed !== canonical;
+  const normalized = resolveArtworkImageUrl(trimmed, artwork);
+  return normalized !== canonical;
 }
 
 /**
@@ -963,7 +966,7 @@ export function resolveGalleryArtwork(
     imageUrl:
       DEFAULT_ARTWORK_IMAGE_MAP[repoItem.id] ||
       DEFAULT_ARTWORK_IMAGE_MAP[resolvedId] ||
-      '/assets/artworks/art-repo-garuda.jpg',
+      './assets/artworks/art-repo-garuda.jpg',
   };
 }
 
@@ -1565,9 +1568,10 @@ const initialPersisted = loadPersistedState();
 
 function isInitialAdminRoute(): boolean {
   if (typeof window === 'undefined') return false;
+  const cleanPath = window.location.pathname.replace(/\/+$/, '');
   return (
-    window.location.pathname === '/admin' ||
-    window.location.pathname.startsWith('/admin/') ||
+    cleanPath === '/admin' ||
+    cleanPath.endsWith('/admin') ||
     window.location.hash === '#/admin'
   );
 }
@@ -1638,12 +1642,25 @@ export const galleryStore = createStore<GalleryState>((set, get) => ({
     }),
   setAdminDashboardOpen: (isAdminDashboardOpen) => {
     if (typeof window !== 'undefined' && window.history?.pushState) {
-      const targetPath = isAdminDashboardOpen ? '/admin' : '/';
-      if (window.location.pathname !== targetPath) {
+      const rawPath = window.location.pathname;
+      const basePrefix = rawPath.replace(/\/admin\/?$/, '').replace(/\/+$/, '');
+      if (basePrefix && basePrefix !== '') {
+        const targetUrl = isAdminDashboardOpen
+          ? `${basePrefix}/#/admin`
+          : `${basePrefix}/`;
         try {
-          window.history.pushState({}, '', targetPath);
+          window.history.pushState({}, '', targetUrl);
         } catch {
           // ignore history error in restricted iframe
+        }
+      } else {
+        const targetPath = isAdminDashboardOpen ? '/admin' : '/';
+        if (window.location.pathname !== targetPath) {
+          try {
+            window.history.pushState({}, '', targetPath);
+          } catch {
+            // ignore history error in restricted iframe
+          }
         }
       }
     }

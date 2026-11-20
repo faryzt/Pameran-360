@@ -34,11 +34,11 @@ import {
 
 test('ROOM_LIST contains 5 interconnected gallery rooms with 1-2 word portal labels and no Karya SD text', () => {
   assert.equal(ROOM_LIST.length, 5);
-  assert.equal(ROOMS.ruang_1.panoramaUrl, '/assets/aistudio/ruang1_gerbang_sd_360.jpg');
-  assert.equal(ROOMS.ruang_2.panoramaUrl, '/assets/aistudio/ruang2_lukisan_sd_360.jpg');
-  assert.equal(ROOMS.ruang_3.panoramaUrl, '/assets/aistudio/ruang3_kriya_sd_360.jpg');
-  assert.equal(ROOMS.ruang_4.panoramaUrl, '/assets/aistudio/ruang4_wastra_360.jpg');
-  assert.equal(ROOMS.ruang_5.panoramaUrl, '/assets/aistudio/ruang5_repositori_360.jpg');
+  assert.equal(ROOMS.ruang_1.panoramaUrl, './assets/aistudio/ruang1_gerbang_sd_360.jpg');
+  assert.equal(ROOMS.ruang_2.panoramaUrl, './assets/aistudio/ruang2_lukisan_sd_360.jpg');
+  assert.equal(ROOMS.ruang_3.panoramaUrl, './assets/aistudio/ruang3_kriya_sd_360.jpg');
+  assert.equal(ROOMS.ruang_4.panoramaUrl, './assets/aistudio/ruang4_wastra_360.jpg');
+  assert.equal(ROOMS.ruang_5.panoramaUrl, './assets/aistudio/ruang5_repositori_360.jpg');
   for (const room of ROOM_LIST) {
     assert.ok(!room.name.toLowerCase().includes('karya sd'));
     assert.ok(room.portals.length >= 2);
@@ -81,7 +81,7 @@ test('INITIAL_ARTWORKS contains 18 student artworks, each with a dedicated hyper
     assert.equal(art.level, 'SD');
     assert.ok(art.school.startsWith('SD'));
     assert.ok(
-      art.imageUrl && art.imageUrl.startsWith('/assets/artworks/art-'),
+      art.imageUrl && art.imageUrl.startsWith('./assets/artworks/art-'),
       `Expected ${art.id} to have hyper-realistic imageUrl, got ${art.imageUrl}`,
     );
     imageUrls.add(art.imageUrl!);
@@ -122,7 +122,7 @@ test('Galeri (getRepositoryList & resolveGalleryArtwork) returns items and resol
     assert.equal(resolved.title, item.title);
     assert.equal(resolved.whatsapp, '6285111581115');
     assert.ok(
-      resolved.imageUrl && resolved.imageUrl.startsWith('/assets/artworks/'),
+      resolved.imageUrl && resolved.imageUrl.startsWith('./assets/artworks/'),
       `Expected resolved repository item ${item.id} to have real photograph imageUrl`,
     );
   }
@@ -292,16 +292,17 @@ test('galleryStore cart, Galeri modal, comments deletion, adminPasscode (123456 
   assert.equal(updatedArt1.imageUrl, sampleDataUrl);
   assert.equal(isCustomArtworkImage(updatedArt1), true);
 
-  // Resetting imageUrl via updateArtwork('art-1', { imageUrl: undefined }) restores canonical /assets/artworks/art-1.jpg
+  // Resetting imageUrl via updateArtwork('art-1', { imageUrl: undefined }) restores canonical ./assets/artworks/art-1.jpg
   galleryStore.getState().updateArtwork('art-1', { imageUrl: undefined });
   const resetArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1')!;
-  assert.equal(resetArt1.imageUrl, '/assets/artworks/art-1.jpg');
+  assert.equal(resetArt1.imageUrl, './assets/artworks/art-1.jpg');
   assert.equal(isCustomArtworkImage(resetArt1), false);
   assert.equal(resolveArtworkImageUrl(undefined, resetArt1), getDefaultArtworkImageUrl(resetArt1));
+  assert.equal(resolveArtworkImageUrl('/assets/artworks/art-1.jpg', resetArt1), './assets/artworks/art-1.jpg');
 
   galleryStore.getState().resetSeedData();
   const restoredArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1');
-  assert.equal(restoredArt1?.imageUrl, '/assets/artworks/art-1.jpg');
+  assert.equal(restoredArt1?.imageUrl, './assets/artworks/art-1.jpg');
 });
 
 
