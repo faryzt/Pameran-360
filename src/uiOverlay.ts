@@ -65,6 +65,7 @@ export class UIOverlayController {
 
   // Visitor Comment Form Draft State inside Artwork Modal (Minimalist: Only Name & Message)
   private draftVisitorName = '';
+  private editingCommentId: string | null = null;
 
   // Cart Checkout State
   private checkoutName = '';
@@ -132,6 +133,7 @@ export class UIOverlayController {
         this.renderBottomRightInfo();
       }
       if (state.selectedArtworkId !== prevState.selectedArtworkId) {
+        this.editingCommentId = null;
         if (state.selectedArtworkId) {
           this.audioManager.playInteractionChime('modalOpen');
         } else if (prevState.selectedArtworkId) {
@@ -707,12 +709,12 @@ export class UIOverlayController {
         </span>
       </button>
 
-      <!-- Tombol Icon Pengaturan (Berisi Pengaturan Publik & Masuk dengan Google) -->
+      <!-- Tombol Icon STARLA BUDAYA v.0.2.3 (Berisi Pengaturan Publik & Masuk dengan Google) -->
       <button
         type="button"
         id="nav-open-admin"
-        aria-label="Pengaturan"
-        title="Pengaturan"
+        aria-label="STARLA BUDAYA v.0.2.3"
+        title="STARLA BUDAYA v.0.2.3"
         class="relative group w-10 h-10 rounded-2xl bg-black/45 hover:bg-black/70 backdrop-blur-md border border-white/25 hover:border-amber-300/70 text-white/95 flex items-center justify-center transition-all shadow-lg cursor-pointer"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -720,7 +722,7 @@ export class UIOverlayController {
           <path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
         </svg>
         <span class="pointer-events-none absolute top-full mt-1.5 right-0 px-2.5 py-1 rounded-lg bg-stone-950/95 border border-white/20 text-[11px] font-medium text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl">
-          Pengaturan
+          STARLA BUDAYA v.0.2.3
         </span>
       </button>
     `;
@@ -782,62 +784,78 @@ export class UIOverlayController {
       });
   }
 
-  // ─── 4. POJOK KIRI BAWAH (MOBILE LEGENDS ANALOG NAVIGATION) ────────────────
+  // ─── 4. POJOK KIRI BAWAH (CLEAN & PROFESSIONAL 360° ANALOG CONTROLLER) ─────
   private renderBottomLeftAnalog() {
     this.bottomLeftAnalogLayer.innerHTML = `
-      <div class="flex flex-col items-center gap-1">
+      <div class="flex flex-col items-center">
         <div
           id="ml-analog-pad"
           role="application"
           aria-label="Analog Navigasi Kamera 360 Derajat"
-          class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-black/30 backdrop-blur-md border-2 border-white/25 shadow-xl flex items-center justify-center touch-none cursor-grab active:cursor-grabbing"
+          class="group relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-stone-950/60 hover:bg-stone-950/75 backdrop-blur-xl border border-white/15 hover:border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.12)] flex items-center justify-center touch-none cursor-grab active:cursor-grabbing transition-colors"
         >
-          <div class="pointer-events-none absolute inset-2.5 rounded-full border border-amber-300/25"></div>
-          <div class="pointer-events-none absolute inset-7 rounded-full border border-white/10"></div>
+          <!-- Subtle Precision Orbit Track & Axis Ticks -->
+          <div class="pointer-events-none absolute inset-3 rounded-full border border-white/[0.08]"></div>
+          <div class="pointer-events-none absolute inset-8 rounded-full border border-dashed border-white/[0.06]"></div>
+          <div class="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent"></div>
+          <div class="pointer-events-none absolute inset-y-4 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-white/[0.07] to-transparent"></div>
 
+          <!-- Clean SVG Cardinal Directional Buttons -->
           <button
             type="button"
             id="analog-tap-up"
             aria-label="Arahkan Pandangan ke Atas"
-            class="absolute top-1 left-1/2 -translate-x-1/2 text-[10px] text-white/75 hover:text-amber-300 px-2 py-0.5"
+            title="Pandangan Atas"
+            class="absolute top-1.5 left-1/2 -translate-x-1/2 w-7 h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            ▲
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M18 15l-6-6-6 6" />
+            </svg>
           </button>
           <button
             type="button"
             id="analog-tap-down"
             aria-label="Arahkan Pandangan ke Bawah"
-            class="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-white/75 hover:text-amber-300 px-2 py-0.5"
+            title="Pandangan Bawah"
+            class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-7 h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            ▼
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
+            </svg>
           </button>
           <button
             type="button"
             id="analog-tap-left"
             aria-label="Putar Kamera ke Kiri"
-            class="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] text-white/75 hover:text-amber-300 px-1 py-1"
+            title="Putar Kiri"
+            class="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            ◀
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
+            </svg>
           </button>
           <button
             type="button"
             id="analog-tap-right"
             aria-label="Putar Kamera ke Kanan"
-            class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] text-white/75 hover:text-amber-300 px-1 py-1"
+            title="Putar Kanan"
+            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            ▶
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
+            </svg>
           </button>
 
+          <!-- Tactile Floating Center Puck -->
           <div
             id="ml-analog-knob"
-            class="pointer-events-none w-11 h-11 rounded-full bg-amber-400/35 border-2 border-amber-200/90 shadow-[0_0_14px_rgba(251,191,36,0.5)] flex items-center justify-center transition-transform duration-75"
+            class="pointer-events-none w-11 h-11 rounded-full bg-gradient-to-b from-stone-800/95 to-stone-950/95 border border-white/25 group-hover:border-amber-300/60 shadow-[0_6px_16px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] flex items-center justify-center transition-transform duration-75"
           >
-            <div class="w-3 h-3 rounded-full bg-white/90"></div>
+            <div class="w-6 h-6 rounded-full border border-white/15 flex items-center justify-center bg-stone-900/80">
+              <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
+            </div>
           </div>
         </div>
-        <span class="text-[10px] font-medium tracking-wider uppercase text-white/75 drop-shadow">
-          Analog 360°
-        </span>
       </div>
     `;
 
@@ -873,14 +891,14 @@ export class UIOverlayController {
       const resetStick = () => {
         this.analogActive = false;
         this.analogPointerId = null;
-        knob.style.transition = 'transform 140ms ease-out';
+        knob.style.transition = 'transform 160ms cubic-bezier(0.22, 1, 0.36, 1)';
         knob.style.transform = 'translate3d(0px, 0px, 0)';
         this.sceneScript.setAnalogInput(0, 0);
       };
 
       pad.addEventListener('pointerdown', (e) => {
         const target = e.target as HTMLElement | null;
-        if (target && target.tagName.toLowerCase() === 'button') return;
+        if (target && target.closest('button')) return;
         e.stopPropagation();
         const rect = pad.getBoundingClientRect();
         this.analogCenterX = rect.left + rect.width / 2;
@@ -1397,24 +1415,115 @@ export class UIOverlayController {
       }
     }
 
+    const isCuratorComment = (c: ReturnType<typeof getArtworkComments>[number]) =>
+      c.visitorName === 'Tim Kurator Pameran Virtual' ||
+      c.visitorName.toLowerCase().includes('kurator') ||
+      c.id.startsWith('cmt-curator-') ||
+      c.id.startsWith('cmt-default-');
+
     const renderCommentsHtml = (items: ReturnType<typeof getArtworkComments>) =>
       items
-        .map(
-          (c) => `
-        <div class="p-3 rounded-xl bg-stone-900/70 border border-stone-800/80 flex items-start gap-3">
-          <div class="w-7 h-7 rounded-full bg-stone-800 border border-stone-700 text-amber-300 text-xs font-bold flex items-center justify-center shrink-0">
-            ${this.escapeHtml((c.visitorName || 'P').charAt(0).toUpperCase())}
-          </div>
-          <div class="min-w-0 flex-1 space-y-0.5">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-semibold text-white truncate">${this.escapeHtml(c.visitorName)}</span>
-              <span class="text-[10px] text-stone-500 shrink-0">${this.escapeHtml(c.createdAt)}</span>
+        .map((c) => {
+          const isCurator = isCuratorComment(c);
+          const isEditingThis = this.editingCommentId === c.id;
+
+          if (isEditingThis) {
+            return `
+              <div
+                data-curator-edit-box="${this.escapeAttr(c.id)}"
+                class="p-3.5 rounded-xl bg-stone-900/95 border border-amber-400/50 space-y-2.5"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-semibold text-amber-300 flex items-center gap-1.5">
+                    <span>✦</span>
+                    <span>Edit Ulasan Kurator</span>
+                  </span>
+                  <span class="text-[10px] text-stone-400">${this.escapeHtml(c.createdAt)}</span>
+                </div>
+                <div class="space-y-2">
+                  <input
+                    type="text"
+                    data-edit-curator-name="${this.escapeAttr(c.id)}"
+                    value="${this.escapeAttr(c.visitorName)}"
+                    placeholder="Nama Kurator"
+                    class="w-full px-3 py-1.5 rounded-lg bg-stone-950 border border-stone-700 text-xs text-white focus:border-amber-400 focus:outline-none"
+                  />
+                  <textarea
+                    rows="3"
+                    data-edit-curator-message="${this.escapeAttr(c.id)}"
+                    placeholder="Tulis ulasan kuratorial..."
+                    class="w-full px-3 py-2 rounded-lg bg-stone-950 border border-stone-700 text-xs text-stone-100 leading-relaxed focus:border-amber-400 focus:outline-none"
+                  >${this.escapeHtml(c.message)}</textarea>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    data-cancel-edit-comment="${this.escapeAttr(c.id)}"
+                    class="px-3 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 text-[11px] font-medium transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    data-save-edit-comment="${this.escapeAttr(c.id)}"
+                    class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-[11px] font-bold transition-colors cursor-pointer"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="p-3 rounded-xl ${
+              isCurator
+                ? 'bg-amber-500/[0.07] border border-amber-400/25'
+                : 'bg-stone-900/70 border border-stone-800/80'
+            } flex items-start gap-3">
+              <div class="w-7 h-7 rounded-full ${
+                isCurator
+                  ? 'bg-amber-500/20 border border-amber-400/50 text-amber-300'
+                  : 'bg-stone-800 border border-stone-700 text-amber-300'
+              } text-xs font-bold flex items-center justify-center shrink-0">
+                ${this.escapeHtml((c.visitorName || 'P').charAt(0).toUpperCase())}
+              </div>
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-xs font-semibold text-white truncate">${this.escapeHtml(c.visitorName)}</span>
+                    ${
+                      isCurator
+                        ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-[9px] font-semibold text-amber-300 shrink-0">Kurator</span>`
+                        : ''
+                    }
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-[10px] text-stone-500">${this.escapeHtml(c.createdAt)}</span>
+                    ${
+                      isCurator
+                        ? `<button
+                            type="button"
+                            data-edit-curator-comment="${this.escapeAttr(c.id)}"
+                            aria-label="Edit Ulasan Kurator"
+                            title="Edit Ulasan Kurator"
+                            class="px-2 py-0.5 rounded-md bg-stone-800/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400/50 text-[10px] font-medium text-stone-300 hover:text-amber-200 flex items-center gap-1 transition-colors cursor-pointer"
+                          >
+                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            <span>Edit</span>
+                          </button>`
+                        : ''
+                    }
+                  </div>
+                </div>
+                <p class="text-xs text-stone-300 leading-relaxed">${this.escapeHtml(c.message)}</p>
+              </div>
             </div>
-            <p class="text-xs text-stone-300 leading-relaxed">${this.escapeHtml(c.message)}</p>
-          </div>
-        </div>
-      `,
-        )
+          `;
+        })
         .join('');
 
     this.modalLayer.innerHTML = `
@@ -1729,6 +1838,89 @@ export class UIOverlayController {
       if (msgEl) {
         msgEl.value = '';
         msgEl.focus();
+      }
+    });
+
+    const commentsListEl = this.modalLayer.querySelector(
+      '#artwork-comments-list',
+    ) as HTMLElement | null;
+    const refreshCommentsList = () => {
+      if (!commentsListEl) return;
+      const updated = getArtworkComments(
+        galleryStore.getState().commentsByArtwork,
+        art.id,
+      );
+      commentsListEl.innerHTML = renderCommentsHtml(updated);
+      const badgeCountEl = this.modalLayer.querySelector('#comment-count-badge');
+      if (badgeCountEl) {
+        badgeCountEl.textContent = `${updated.length} Komentar`;
+      }
+    };
+
+    commentsListEl?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const editBtn = target.closest(
+        '[data-edit-curator-comment]',
+      ) as HTMLElement | null;
+      if (editBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const commentId = editBtn.getAttribute('data-edit-curator-comment');
+        if (commentId) {
+          this.editingCommentId = commentId;
+          this.audioManager.playInteractionChime('click');
+          refreshCommentsList();
+        }
+        return;
+      }
+
+      const cancelBtn = target.closest(
+        '[data-cancel-edit-comment]',
+      ) as HTMLElement | null;
+      if (cancelBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.editingCommentId = null;
+        this.audioManager.playInteractionChime('click');
+        refreshCommentsList();
+        return;
+      }
+
+      const saveBtn = target.closest(
+        '[data-save-edit-comment]',
+      ) as HTMLElement | null;
+      if (saveBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const commentId = saveBtn.getAttribute('data-save-edit-comment');
+        if (!commentId) return;
+
+        const nameInput = commentsListEl.querySelector(
+          `[data-edit-curator-name="${commentId}"]`,
+        ) as HTMLInputElement | null;
+        const msgInput = commentsListEl.querySelector(
+          `[data-edit-curator-message="${commentId}"]`,
+        ) as HTMLTextAreaElement | null;
+
+        const nextName = nameInput?.value.trim() || 'Tim Kurator Pameran Virtual';
+        const nextMsg = msgInput?.value.trim() || '';
+
+        const check = validateCommentInput(nextName, nextMsg);
+        if (!check.valid) {
+          this.showToast(check.error || 'Ulasan kurator minimal 3 karakter.');
+          return;
+        }
+
+        galleryStore.getState().updateArtworkComment(art.id, commentId, {
+          visitorName: nextName,
+          message: nextMsg,
+        });
+        this.editingCommentId = null;
+        this.audioManager.playInteractionChime('cart');
+        this.showToast('Ulasan kurator berhasil diperbarui.');
+        refreshCommentsList();
       }
     });
   }

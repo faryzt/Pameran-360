@@ -100,6 +100,7 @@ export class AdminAndModalsController {
   // Admin form validation messages
   private formErrors: string[] = [];
   private formSuccessMsg = '';
+  private editingAdminCommentKey: string | null = null;
 
   constructor(container: HTMLElement, sceneScript: Nusantara360Scene) {
     this.container = container;
@@ -351,7 +352,7 @@ export class AdminAndModalsController {
       >
         <aside
           id="admin-panel-drawer"
-          aria-label="Pengaturan Galeri"
+          aria-label="STARLA BUDAYA v.0.2.3"
           class="pointer-events-auto w-full max-w-md h-full bg-white border-l border-slate-200 text-slate-900 flex flex-col overflow-hidden shadow-2xl"
         >
           <!-- Header Sederhana -->
@@ -362,7 +363,7 @@ export class AdminAndModalsController {
               </div>
               <div>
                 <h2 class="text-sm font-bold tracking-tight text-slate-900">
-                  Pengaturan
+                  STARLA BUDAYA v.0.2.3
                 </h2>
                 <p class="text-[11px] text-slate-500">
                   Akun pengguna, suasana 360°, audio & navigasi
@@ -372,7 +373,7 @@ export class AdminAndModalsController {
             <button
               type="button"
               id="btn-close-admin"
-              aria-label="Tutup Pengaturan"
+              aria-label="Tutup STARLA BUDAYA v.0.2.3"
               class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
             >
               ✕
@@ -1349,37 +1350,102 @@ export class AdminAndModalsController {
                 </div>
               </section>
 
-              <!-- Minimalist Comment Moderation -->
+              <!-- Minimalist Comment & Curator Review Moderation -->
               <section class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
                 <h2 class="text-sm font-bold text-slate-900">
-                  Komentar (${allCommentsList.length})
+                  Komentar & Ulasan Kurator (${allCommentsList.length})
                 </h2>
-                <div class="divide-y divide-slate-100 max-h-52 overflow-y-auto no-scrollbar">
+                <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto no-scrollbar">
                   ${
                     allCommentsList.length === 0
                       ? `<div class="text-xs text-slate-400 py-3 text-center">Belum ada komentar.</div>`
                       : allCommentsList
-                          .map(
-                            (item) => `
-                            <div class="py-2 flex items-center justify-between gap-3">
-                              <div class="min-w-0">
-                                <div class="flex items-center gap-1.5">
-                                  <span class="text-xs font-semibold text-slate-900">${this.escapeHtml(item.visitorName)}</span>
-                                  <span class="text-[11px] text-slate-400 truncate">· ${this.escapeHtml(item.artworkTitle)}</span>
+                          .map((item) => {
+                            const commentKey = `${item.artworkId}::${item.id}`;
+                            const isEditing = this.editingAdminCommentKey === commentKey;
+                            const isCurator =
+                              item.visitorName === 'Tim Kurator Pameran Virtual' ||
+                              item.visitorName.toLowerCase().includes('kurator') ||
+                              item.id.startsWith('cmt-curator-') ||
+                              item.id.startsWith('cmt-default-');
+
+                            if (isEditing) {
+                              return `
+                                <div class="py-2.5 space-y-2">
+                                  <div class="flex items-center justify-between gap-2">
+                                    <span class="text-[11px] font-semibold text-slate-800">
+                                      Edit Ulasan · ${this.escapeHtml(item.artworkTitle)}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    data-admin-edit-comment-name="${this.escapeAttr(commentKey)}"
+                                    value="${this.escapeAttr(item.visitorName)}"
+                                    placeholder="Nama Kurator / Pengunjung"
+                                    class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+                                  />
+                                  <textarea
+                                    rows="2"
+                                    data-admin-edit-comment-msg="${this.escapeAttr(commentKey)}"
+                                    placeholder="Pesan ulasan..."
+                                    class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+                                  >${this.escapeHtml(item.message)}</textarea>
+                                  <div class="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      data-admin-cancel-comment-edit="${this.escapeAttr(commentKey)}"
+                                      class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium cursor-pointer"
+                                    >
+                                      Batal
+                                    </button>
+                                    <button
+                                      type="button"
+                                      data-admin-save-comment-art="${this.escapeAttr(item.artworkId)}"
+                                      data-admin-save-comment-id="${this.escapeAttr(item.id)}"
+                                      data-admin-save-comment-key="${this.escapeAttr(commentKey)}"
+                                      class="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-semibold cursor-pointer"
+                                    >
+                                      Simpan
+                                    </button>
+                                  </div>
                                 </div>
-                                <p class="text-xs text-slate-600 truncate">${this.escapeHtml(item.message)}</p>
+                              `;
+                            }
+
+                            return `
+                              <div class="py-2 flex items-center justify-between gap-3">
+                                <div class="min-w-0">
+                                  <div class="flex items-center gap-1.5">
+                                    <span class="text-xs font-semibold text-slate-900">${this.escapeHtml(item.visitorName)}</span>
+                                    ${
+                                      isCurator
+                                        ? `<span class="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium shrink-0">Kurator</span>`
+                                        : ''
+                                    }
+                                    <span class="text-[11px] text-slate-400 truncate">· ${this.escapeHtml(item.artworkTitle)}</span>
+                                  </div>
+                                  <p class="text-xs text-slate-600 truncate">${this.escapeHtml(item.message)}</p>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    data-admin-edit-comment-key="${this.escapeAttr(commentKey)}"
+                                    class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-medium cursor-pointer"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-delete-comment-art="${item.artworkId}"
+                                    data-delete-comment-id="${item.id}"
+                                    class="px-2 py-1 rounded-md hover:bg-rose-50 text-rose-600 text-[11px] font-medium cursor-pointer"
+                                  >
+                                    Hapus
+                                  </button>
+                                </div>
                               </div>
-                              <button
-                                type="button"
-                                data-delete-comment-art="${item.artworkId}"
-                                data-delete-comment-id="${item.id}"
-                                class="px-2 py-1 rounded-md hover:bg-rose-50 text-rose-600 text-[11px] font-medium shrink-0 cursor-pointer"
-                              >
-                                Hapus
-                              </button>
-                            </div>
-                          `,
-                          )
+                            `;
+                          })
                           .join('')
                   }
                 </div>
@@ -1799,7 +1865,54 @@ export class AdminAndModalsController {
       });
     });
 
-    // Delete comment buttons
+    // Edit, Save, Cancel, and Delete comment buttons in Admin Dashboard
+    this.container
+      .querySelectorAll('[data-admin-edit-comment-key]')
+      .forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-admin-edit-comment-key');
+          this.editingAdminCommentKey = key;
+          this.render();
+        });
+      });
+
+    this.container
+      .querySelectorAll('[data-admin-cancel-comment-edit]')
+      .forEach((btn) => {
+        btn.addEventListener('click', () => {
+          this.editingAdminCommentKey = null;
+          this.render();
+        });
+      });
+
+    this.container
+      .querySelectorAll('[data-admin-save-comment-id]')
+      .forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const artId = btn.getAttribute('data-admin-save-comment-art');
+          const commentId = btn.getAttribute('data-admin-save-comment-id');
+          const key = btn.getAttribute('data-admin-save-comment-key');
+          if (!artId || !commentId || !key) return;
+
+          const nameInp = this.container.querySelector(
+            `[data-admin-edit-comment-name="${key}"]`,
+          ) as HTMLInputElement | null;
+          const msgInp = this.container.querySelector(
+            `[data-admin-edit-comment-msg="${key}"]`,
+          ) as HTMLTextAreaElement | null;
+
+          const nextName = (nameInp?.value || '').trim();
+          const nextMsg = (msgInp?.value || '').trim();
+          if (nextMsg.length < 3) return;
+
+          this.editingAdminCommentKey = null;
+          galleryStore.getState().updateArtworkComment(artId, commentId, {
+            visitorName: nextName.length >= 2 ? nextName : undefined,
+            message: nextMsg,
+          });
+        });
+      });
+
     this.container.querySelectorAll('[data-delete-comment-id]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const artId = btn.getAttribute('data-delete-comment-art');

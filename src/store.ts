@@ -1289,6 +1289,10 @@ export function getArtworkComments(
   const list = commentsByArtwork[artworkId];
   if (Array.isArray(list) && list.length > 0) {
     return list.map((c) => {
+      const isLegacyCuratorMsg =
+        !c.message ||
+        !c.message.trim() ||
+        c.message.includes('Karya pelajar SD yang sangat membanggakan');
       if (
         c.visitorName === 'Tim Kurator Pameran Virtual' ||
         c.visitorName === 'Tim Kurator Nusantara 360'
@@ -1296,7 +1300,7 @@ export function getArtworkComments(
         return {
           ...c,
           visitorName: 'Tim Kurator Pameran Virtual',
-          message: getCuratorExpertComment(artworkId),
+          message: isLegacyCuratorMsg ? getCuratorExpertComment(artworkId) : c.message,
         };
       }
       return c;
@@ -1386,6 +1390,15 @@ export interface GalleryState {
       message: string;
     },
   ) => import('./types.ts').ArtworkComment;
+  updateArtworkComment: (
+    artworkId: string,
+    commentId: string,
+    patch: {
+      visitorName?: string;
+      badge?: import('./types.ts').AppreciationBadge;
+      message: string;
+    },
+  ) => void;
   deleteArtworkComment: (artworkId: string, commentId: string) => void;
 
   addToCart: (artwork: Artwork) => void;
@@ -1406,6 +1419,10 @@ function normalizePersistedComments(
   for (const [artId, list] of Object.entries(rawComments)) {
     if (!Array.isArray(list) || list.length === 0) continue;
     const upgraded = list.map((c) => {
+      const isLegacyCuratorMsg =
+        !c.message ||
+        !c.message.trim() ||
+        c.message.includes('Karya pelajar SD yang sangat membanggakan');
       if (
         c.visitorName === 'Tim Kurator Pameran Virtual' ||
         c.visitorName === 'Tim Kurator Nusantara 360'
@@ -1413,14 +1430,17 @@ function normalizePersistedComments(
         return {
           ...c,
           visitorName: 'Tim Kurator Pameran Virtual',
-          message: getCuratorExpertComment(artId),
-          createdAt: 'Kurasi Ahli Budaya',
+          message: isLegacyCuratorMsg ? getCuratorExpertComment(artId) : c.message,
+          createdAt: c.createdAt || 'Kurasi Ahli Budaya',
         };
       }
       return c;
     });
     const hasCurator = upgraded.some(
-      (c) => c.visitorName === 'Tim Kurator Pameran Virtual',
+      (c) =>
+        c.visitorName === 'Tim Kurator Pameran Virtual' ||
+        c.id.startsWith('cmt-curator-') ||
+        c.id.startsWith('cmt-default-'),
     );
     if (!hasCurator) {
       upgraded.push({
@@ -1849,6 +1869,37 @@ export const galleryStore = createStore<GalleryState>((set, get) => ({
       adminPasscode: get().adminPasscode,
     });
     return newComment;
+  },
+
+  updateArtworkComment: (artworkId, commentId, patch) => {
+    const cleanMessage = (patch.message || '').trim();
+    if (!cleanMessage) return;
+    const existing = getArtworkComments(get().commentsByArtwork, artworkId);
+    const updated = existing.map((c) => {
+      if (c.id !== commentId) return c;
+      const nextVisitorName =
+        typeof patch.visitorName === 'string' && patch.visitorName.trim().length >= 2
+          ? patch.visitorName.trim()
+          : c.visitorName;
+      return {
+        ...c,
+        visitorName: nextVisitorName,
+        badge: patch.badge || c.badge,
+        message: cleanMessage,
+      };
+    });
+    const nextComments = {
+      ...get().commentsByArtwork,
+      [artworkId]: updated,
+    };
+    set({ commentsByArtwork: nextComments });
+    savePersistedState({
+      artworks: get().artworks,
+      cart: get().cart,
+      lightingTheme: get().lightingTheme,
+      commentsByArtwork: nextComments,
+      adminPasscode: get().adminPasscode,
+    });
   },
 
   deleteArtworkComment: (artworkId, commentId) => {

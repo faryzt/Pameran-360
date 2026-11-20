@@ -257,6 +257,22 @@ test('galleryStore cart, Galeri modal, comments deletion, adminPasscode (123456 
   );
   assert.ok(!afterDelete.some((c) => c.id === added.id));
 
+  // Verify curator comment can be edited via updateArtworkComment and preserves edited message
+  galleryStore.getState().updateArtworkComment('art-1', curatorComment.id, {
+    visitorName: 'Tim Kurator Pameran Virtual',
+    message: 'Catatan kurasi baru: Harmoni ekologis Way Kambas yang sangat memukau.',
+  });
+  const afterCuratorEdit = getArtworkComments(
+    galleryStore.getState().commentsByArtwork,
+    'art-1',
+  );
+  const editedCurator = afterCuratorEdit.find((c) => c.id === curatorComment.id);
+  assert.ok(editedCurator);
+  assert.equal(
+    editedCurator.message,
+    'Catatan kurasi baru: Harmoni ekologis Way Kambas yang sangat memukau.',
+  );
+
   galleryStore.getState().setAudioVolume(45);
   assert.equal(galleryStore.getState().audioVolume, 45);
   assert.equal(galleryStore.getState().audioMuted, false);
