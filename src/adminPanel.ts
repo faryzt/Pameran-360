@@ -6,6 +6,9 @@ import {
   formatIDR,
   validateArtworkInput,
   findSmartArtworkSlot,
+  DEFAULT_WHATSAPP_NUMBER,
+  isCustomArtworkImage,
+  getDefaultArtworkImageUrl,
 } from './store.ts';
 import type {
   Artwork,
@@ -50,7 +53,7 @@ export class AdminAndModalsController {
 
   private authUserEmail: string | null = null;
   private authUserName: string | null = null;
-  private userWhatsapp = '6281271001001';
+  private userWhatsapp = DEFAULT_WHATSAPP_NUMBER;
   private userAutoAudio = true;
   private userSettingsStatusMsg = '';
 
@@ -62,13 +65,18 @@ export class AdminAndModalsController {
   // Admin /admin login & security state
   private adminLoginError = '';
   private adminPasscodeStatusMsg = '';
+  private adminFailedAttempts = 0;
+  private adminLockoutUntil = 0;
+  private showLoginPasscode = false;
+  private showNewPasscode = false;
 
   // Clean Section / Filter state in the White Admin Dashboard
   private adminRoomFilter: RoomId | 'ALL' = 'ALL';
   private adminSearchQuery = '';
 
-  // Draft uploaded image for the Add/Edit Artwork form
+  // Draft uploaded image & unsaved form fields for the Add/Edit Artwork form
   private draftArtworkImageUrl = '';
+  private draftFormFields: Partial<Artwork> | null = null;
   private lastSyncedEditingId: string | null = null;
 
   private activeReactFileTab:
@@ -105,7 +113,7 @@ export class AdminAndModalsController {
         if (parsed && parsed.email) {
           this.authUserEmail = parsed.email;
           this.authUserName = parsed.name || 'Pengunjung Pameran Virtual';
-          this.userWhatsapp = parsed.whatsapp || '6281271001001';
+          this.userWhatsapp = DEFAULT_WHATSAPP_NUMBER;
           this.userAutoAudio = parsed.autoAudio !== undefined ? Boolean(parsed.autoAudio) : true;
         }
       }
@@ -184,7 +192,7 @@ export class AdminAndModalsController {
         email: this.authUserEmail,
         name: this.authUserName || 'Pengguna Pameran Virtual',
         role: 'User',
-        whatsapp: this.userWhatsapp || '6281271001001',
+        whatsapp: this.userWhatsapp || DEFAULT_WHATSAPP_NUMBER,
         autoAudio: this.userAutoAudio,
       };
       window.localStorage.setItem(USER_PROFILE_STORAGE_KEY, JSON.stringify(data));
@@ -280,7 +288,7 @@ export class AdminAndModalsController {
                   id="inp-user-wa"
                   type="text"
                   value="${this.escapeAttr(this.userWhatsapp)}"
-                  placeholder="62812..."
+                  placeholder="6285111581115"
                   class="w-full px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-mono focus:border-amber-500 focus:outline-none"
                 />
               </div>
@@ -646,75 +654,95 @@ export class AdminAndModalsController {
       });
   }
 
-  // ─── 2. DASHBOARD ADMIN MINIMALIS & PROFESIONAL (USER 123456) ──────────────
+  // ─── 2. LOGIN & DASHBOARD ADMIN MINIMALIS, SEDERHANA & AMAN ──────────────
   private renderAdminRouteDashboard() {
     const state = galleryStore.getState();
 
-    // If not authenticated yet, show clean white Login Gate
+    // 2A. Minimalist & Secure Admin Login Gate
     if (!state.isAdminAuthenticated) {
+      const now = Date.now();
+      const isLockedOut = this.adminLockoutUntil > now;
+      const remainingLockSec = isLockedOut
+        ? Math.ceil((this.adminLockoutUntil - now) / 1000)
+        : 0;
+
       this.container.innerHTML = `
         <div
           id="admin-backdrop"
           data-ui-interactive="true"
-          class="fixed inset-0 z-[305] pointer-events-auto select-text flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+          class="fixed inset-0 z-[305] pointer-events-auto select-text flex items-center justify-center bg-slate-950/55 backdrop-blur-xs p-4"
         >
           <div
             id="admin-login-card"
             role="dialog"
-            aria-label="Login Dashboard Admin Pameran Virtual"
-            class="w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-2xl p-6 sm:p-8 text-slate-900 space-y-5"
+            aria-modal="true"
+            aria-label="Login Admin Pameran Virtual"
+            class="w-full max-w-sm rounded-2xl bg-white border border-slate-200 shadow-xl p-6 text-slate-900 space-y-5"
           >
             <div class="flex items-center justify-between">
-              <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
-                Kurator & Admin
-              </span>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 class="text-base font-bold tracking-tight text-slate-900">
+                    Login Admin
+                  </h2>
+                  <p class="text-[11px] text-slate-500">
+                    Pameran Virtual
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 id="btn-back-to-gallery-from-login"
-                class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer"
+                class="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 text-xs font-medium transition-colors cursor-pointer"
               >
-                ← Kembali ke Galeri
+                Tutup
               </button>
-            </div>
-
-            <div class="space-y-1.5">
-              <h2 class="text-xl font-bold tracking-tight text-slate-900">
-                Masuk Dashboard Admin
-              </h2>
-              <p class="text-xs text-slate-500 leading-relaxed">
-                Masukkan Kode User Admin untuk mengelola, mengedit, mengunggah gambar karya, menambahkan, dan menghapus konten karya Pameran Virtual.
-              </p>
             </div>
 
             ${
               this.adminLoginError
-                ? `<div role="alert" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700">${this.escapeHtml(this.adminLoginError)}</div>`
+                ? `<div role="alert" class="px-3 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700">${this.escapeHtml(this.adminLoginError)}</div>`
                 : ''
             }
 
             <form id="form-admin-login" class="space-y-4" novalidate>
               <div>
-                <label for="inp-admin-passcode" class="block text-xs font-bold text-slate-700 mb-1.5">
-                  User / Kode Akses Admin
+                <label for="inp-admin-passcode" class="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Kode Akses
                 </label>
-                <input
-                  id="inp-admin-passcode"
-                  type="text"
-                  value=""
-                  autocomplete="off"
-                  placeholder="Masukkan kode user admin (default: ${this.escapeAttr(state.adminPasscode)})"
-                  class="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-300 text-sm font-mono font-bold text-slate-900 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus:outline-none"
-                />
-                <p class="text-[11px] text-slate-400 mt-1.5">
-                  Kode akses saat ini: <span class="font-mono font-bold text-slate-600">${this.escapeHtml(state.adminPasscode)}</span> (dapat diganti di dalam dashboard)
-                </p>
+                <div class="relative">
+                  <input
+                    id="inp-admin-passcode"
+                    type="${this.showLoginPasscode ? 'text' : 'password'}"
+                    value=""
+                    autocomplete="current-password"
+                    ${isLockedOut ? 'disabled' : ''}
+                    placeholder="Masukkan kode akses"
+                    class="w-full pl-3.5 pr-16 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-mono text-slate-900 placeholder-slate-400 focus:bg-white focus:border-slate-900 focus:outline-none disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    id="btn-toggle-login-pass-visibility"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-800 cursor-pointer"
+                  >
+                    ${this.showLoginPasscode ? 'Sembunyi' : 'Lihat'}
+                  </button>
+                </div>
               </div>
+
               <button
                 type="submit"
                 id="btn-admin-login-submit"
-                class="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs tracking-wide transition-colors shadow-sm cursor-pointer"
+                ${isLockedOut ? 'disabled' : ''}
+                class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-semibold text-xs transition-colors cursor-pointer"
               >
-                Masuk ke Dashboard Admin
+                ${isLockedOut ? `Terkunci (${remainingLockSec}d)` : 'Masuk'}
               </button>
             </form>
           </div>
@@ -730,7 +758,15 @@ export class AdminAndModalsController {
         .querySelector('#btn-back-to-gallery-from-login')
         ?.addEventListener('click', () => {
           this.adminLoginError = '';
+          this.showLoginPasscode = false;
           galleryStore.getState().setAdminDashboardOpen(false);
+        });
+
+      this.container
+        .querySelector('#btn-toggle-login-pass-visibility')
+        ?.addEventListener('click', () => {
+          this.showLoginPasscode = !this.showLoginPasscode;
+          this.render();
         });
 
       const loginForm = this.container.querySelector(
@@ -738,30 +774,53 @@ export class AdminAndModalsController {
       ) as HTMLFormElement | null;
       loginForm?.addEventListener('submit', (e) => {
         e.preventDefault();
+        const currentNow = Date.now();
+        if (this.adminLockoutUntil > currentNow) {
+          const waitSec = Math.ceil((this.adminLockoutUntil - currentNow) / 1000);
+          this.adminLoginError = `Terlalu banyak percobaan gagal. Coba lagi dalam ${waitSec} detik.`;
+          this.render();
+          return;
+        }
+
         const inp = this.container.querySelector(
           '#inp-admin-passcode',
         ) as HTMLInputElement | null;
         const entered = (inp?.value || '').trim();
         const expected = galleryStore.getState().adminPasscode;
-        if (entered === expected) {
+
+        if (entered.length > 0 && entered === expected) {
           this.adminLoginError = '';
+          this.adminFailedAttempts = 0;
+          this.adminLockoutUntil = 0;
+          this.showLoginPasscode = false;
           galleryStore.getState().setAdminAuthenticated(true);
         } else {
-          this.adminLoginError = `Kode user admin tidak sesuai. Gunakan kode "${expected}".`;
+          this.adminFailedAttempts += 1;
+          if (this.adminFailedAttempts >= 5) {
+            this.adminLockoutUntil = Date.now() + 30_000;
+            this.adminLoginError =
+              'Terlalu banyak percobaan gagal. Akses dikunci sementara selama 30 detik.';
+          } else {
+            this.adminLoginError = 'Kode akses tidak sesuai. Silakan periksa kembali.';
+          }
           this.render();
         }
       });
       return;
     }
 
-    // Authenticated Full Dashboard Admin (/admin)
+    // 2B. Minimalist Authenticated Admin Dashboard
     const editingArtwork = state.editingArtworkId
       ? state.artworks.find((a) => a.id === state.editingArtworkId) || null
       : null;
 
     if (state.editingArtworkId !== this.lastSyncedEditingId) {
       this.lastSyncedEditingId = state.editingArtworkId;
-      this.draftArtworkImageUrl = editingArtwork?.imageUrl || '';
+      this.draftFormFields = null;
+      this.draftArtworkImageUrl =
+        editingArtwork && isCustomArtworkImage(editingArtwork)
+          ? editingArtwork.imageUrl || ''
+          : '';
     }
 
     const smartSlot = findSmartArtworkSlot(
@@ -770,7 +829,7 @@ export class AdminAndModalsController {
       'Dinding',
     );
 
-    const defaultValues = editingArtwork || {
+    const baseDefaultValues = editingArtwork || {
       title: '',
       creator: '',
       level: 'SD' as EducationLevel,
@@ -781,15 +840,22 @@ export class AdminAndModalsController {
       yaw: smartSlot.yaw,
       pitch: smartSlot.pitch,
       room: state.currentRoom as RoomId,
-      whatsapp: '6281271001099',
+      whatsapp: DEFAULT_WHATSAPP_NUMBER,
       description: '',
       palettePrimary: '#d97706',
       paletteSecondary: '#451a03',
     };
 
+    const defaultValues = {
+      ...baseDefaultValues,
+      ...(this.draftFormFields || {}),
+    };
+
     const currentFormPreviewUrl =
       this.draftArtworkImageUrl ||
-      (editingArtwork ? getArtworkPreviewDataUrl(editingArtwork) : '');
+      (editingArtwork
+        ? getArtworkPreviewDataUrl(editingArtwork)
+        : getDefaultArtworkImageUrl({ category: defaultValues.category }));
 
     const filteredArtworks = state.artworks.filter((art) => {
       if (this.adminRoomFilter !== 'ALL' && art.room !== this.adminRoomFilter) {
@@ -835,547 +901,489 @@ export class AdminAndModalsController {
         data-ui-interactive="true"
         class="fixed inset-0 z-[305] pointer-events-auto select-text flex flex-col bg-slate-50 text-slate-900 overflow-hidden"
       >
-        <!-- Top Navigation Bar of Admin Dashboard -->
+        <!-- Minimalist Top Bar -->
         <header
           id="admin-route-dashboard"
           aria-label="Dashboard Admin Pameran Virtual"
-          class="px-6 py-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-2xs"
+          class="px-5 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0"
         >
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white font-bold text-base flex items-center justify-center shadow-xs">
+            <div class="w-8 h-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
               ✦
             </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900">
-                  Dashboard Admin Pameran Virtual
-                </h1>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-semibold">
-                  User: ${this.escapeHtml(state.adminPasscode)}
-                </span>
-              </div>
-              <p class="text-xs text-slate-500">
-                Pusat kendali kurasi karya 360°, unggah gambar karya, penempatan koordinat pintar, moderasi komentar, dan keamanan kode admin
-              </p>
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <h1 class="text-sm sm:text-base font-bold tracking-tight text-slate-900">
+                Dashboard Admin
+              </h1>
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
+                ${state.artworks.length} Karya
+              </span>
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-medium">
+                ${allCommentsList.length} Komentar
+              </span>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-2">
             <button
               type="button"
               id="btn-admin-open-aistudio"
-              class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
             >
               Studio AI
             </button>
             <button
               type="button"
               id="btn-admin-open-code"
-              class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
             >
               Kode React
             </button>
             <button
               type="button"
               id="btn-admin-logout"
-              class="px-3.5 py-2 rounded-xl bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-semibold transition-colors cursor-pointer"
+              class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 text-xs font-medium transition-colors cursor-pointer"
             >
-              Kunci Admin
+              Kunci
             </button>
             <button
               type="button"
               id="btn-close-admin-dashboard"
               aria-label="Kembali ke Galeri 360"
-              class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+              class="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer"
             >
-              ← Kembali ke Galeri 360°
+              Kembali ke Galeri
             </button>
           </div>
         </header>
 
-        <!-- Main Scrollable Body -->
-        <div class="no-scrollbar flex-1 overflow-y-auto p-6">
-          <div class="max-w-7xl mx-auto space-y-6">
-            <!-- Summary Metrics Bar -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Koleksi Karya</div>
-                <div class="text-2xl font-bold text-slate-900 mt-1">${state.artworks.length} Karya</div>
-                <div class="text-xs text-emerald-700 font-medium mt-0.5">Mendukung unggah gambar di semua karya</div>
-              </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ruang Aktif Saat Ini</div>
-                <div class="text-2xl font-bold text-slate-900 mt-1">${ROOMS[state.currentRoom].code}</div>
-                <div class="text-xs text-slate-500 truncate mt-0.5">${this.escapeHtml(ROOMS[state.currentRoom].name)}</div>
-              </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Komentar Apresiasi</div>
-                <div class="text-2xl font-bold text-slate-900 mt-1">${allCommentsList.length} Pesan</div>
-                <div class="text-xs text-slate-500 mt-0.5">Moderasi langsung aktif</div>
-              </div>
-              <div class="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Kode User Admin</div>
-                <div id="admin-current-passcode-display" class="text-2xl font-mono font-bold text-amber-600 mt-1">${this.escapeHtml(state.adminPasscode)}</div>
-                <div class="text-xs text-slate-500 mt-0.5">Dapat diganti kapan saja</div>
-              </div>
-            </div>
-
-            <!-- Two-Column Workspace: Left = Form Add/Edit + Security, Right = Content List & Comments -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              <!-- Left Column (5 cols): Form Tambah/Edit Karya & Pengaturan User Admin 123456 -->
-              <div class="lg:col-span-5 space-y-6">
-                <!-- Form Tambah / Edit Karya -->
-                <section class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-                  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <h2 class="text-sm font-bold text-slate-900">
-                        ${editingArtwork ? `Edit Karya: ${this.escapeHtml(editingArtwork.title)}` : 'Tambah Karya Baru ke Galeri'}
-                      </h2>
-                      <p class="text-xs text-slate-500">
-                        Lengkapi detail, unggah gambar karya, dan sesuaikan posisi Yaw/Pitch 360°
-                      </p>
-                    </div>
-                    ${
-                      editingArtwork
-                        ? `<button type="button" id="btn-cancel-edit" class="px-3 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 cursor-pointer">Batal Edit</button>`
-                        : ''
-                    }
-                  </div>
-
+        <!-- Minimalist Workspace Body -->
+        <div class="no-scrollbar flex-1 overflow-y-auto p-4 sm:p-6">
+          <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <!-- Left Column (5 cols): Form Karya + Keamanan & Data -->
+            <div class="lg:col-span-5 space-y-4">
+              <!-- Form Tambah / Edit Karya -->
+              <section class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-3.5">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-sm font-bold text-slate-900">
+                    ${editingArtwork ? `Edit: ${this.escapeHtml(editingArtwork.title)}` : 'Tambah Karya'}
+                  </h2>
                   ${
-                    this.formErrors.length > 0
-                      ? `<div role="alert" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 font-medium space-y-1">
-                          ${this.formErrors.map((err) => `<div>• ${err}</div>`).join('')}
-                        </div>`
+                    editingArtwork
+                      ? `<button type="button" id="btn-cancel-edit" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium cursor-pointer">Batal</button>`
                       : ''
                   }
-                  ${
-                    this.formSuccessMsg
-                      ? `<div role="status" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
-                          ${this.escapeHtml(this.formSuccessMsg)}
-                        </div>`
-                      : ''
-                  }
+                </div>
 
-                  <form id="admin-artwork-form" class="space-y-3.5" novalidate>
-                    <!-- Unggah Gambar Karya (Tersedia untuk Tambah Karya Baru maupun Edit Semua Karya) -->
-                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
-                      <div class="flex items-center justify-between gap-2">
-                        <div>
-                          <label for="inp-artwork-image-file" class="block text-xs font-bold text-slate-800">
-                            Foto / Gambar Karya Seni
-                          </label>
-                          <p class="text-[11px] text-slate-500">
-                            Unggah foto karya (JPG, PNG, WebP) untuk ditampilkan di ruang 360° & Pop-Up Karya
-                          </p>
-                        </div>
-                        ${
-                          this.draftArtworkImageUrl
-                            ? `<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Gambar Kustom Aktif</span>`
-                            : `<span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-semibold">Kanvas Default</span>`
-                        }
-                      </div>
+                ${
+                  this.formErrors.length > 0
+                    ? `<div role="alert" class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 space-y-0.5">
+                        ${this.formErrors.map((err) => `<div>• ${err}</div>`).join('')}
+                      </div>`
+                    : ''
+                }
+                ${
+                  this.formSuccessMsg
+                    ? `<div role="status" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-medium">
+                        ${this.escapeHtml(this.formSuccessMsg)}
+                      </div>`
+                    : ''
+                }
 
-                      <div class="flex items-center gap-3">
-                        <div class="w-20 h-14 rounded-xl bg-white border border-slate-300 overflow-hidden flex items-center justify-center shrink-0">
-                          ${
-                            currentFormPreviewUrl
-                              ? `<img id="admin-form-image-preview" src="${currentFormPreviewUrl}" alt="Pratinjau Gambar Karya" referrerpolicy="no-referrer" class="w-full h-full object-cover" />`
-                              : `<span id="admin-form-image-preview-empty" class="text-[10px] text-slate-400 font-medium text-center px-1">Belum ada foto</span>`
-                          }
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                          <input
-                            id="inp-artwork-image-file"
-                            type="file"
-                            accept="image/*"
-                            class="hidden"
-                          />
-                          <button
-                            type="button"
-                            id="btn-trigger-form-image-upload"
-                            class="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                          >
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                              <polyline points="17 8 12 3 7 8"/>
-                              <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <span>Unggah Gambar Karya</span>
-                          </button>
-                          ${
-                            this.draftArtworkImageUrl
-                              ? `<button
-                                  type="button"
-                                  id="btn-clear-form-image"
-                                  class="px-2.5 py-2 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-semibold transition-colors cursor-pointer"
-                                >
-                                  Reset Gambar
-                                </button>`
-                              : ''
-                          }
+                <form id="admin-artwork-form" class="space-y-3" novalidate>
+                  <!-- Compact Image Upload Row -->
+                  <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <img
+                        id="admin-form-image-preview"
+                        src="${currentFormPreviewUrl}"
+                        alt="Pratinjau Karya"
+                        referrerpolicy="no-referrer"
+                        class="w-14 h-10 rounded-lg object-cover border border-slate-200 bg-white shrink-0"
+                      />
+                      <div class="min-w-0">
+                        <div class="text-xs font-semibold text-slate-800 truncate">Foto Karya</div>
+                        <div class="text-[11px] text-slate-500">
+                          ${this.draftArtworkImageUrl ? 'Foto kustom aktif' : 'Foto kurasi bawaan'}
                         </div>
                       </div>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label for="inp-title" class="block text-xs font-semibold text-slate-700 mb-1">Judul Karya Seni</label>
-                        <input id="inp-title" name="title" type="text" value="${this.escapeAttr(defaultValues.title)}" placeholder="Contoh: Batik Kawung Semesta" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none" />
-                      </div>
-                      <div>
-                        <label for="inp-creator" class="block text-xs font-semibold text-slate-700 mb-1">Nama Pencipta</label>
-                        <input id="inp-creator" name="creator" type="text" value="${this.escapeAttr(defaultValues.creator)}" placeholder="Contoh: Siti Aminah" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400 focus:border-amber-500 focus:outline-none" />
-                      </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label for="inp-category" class="block text-xs font-semibold text-slate-700 mb-1">Tipe Pajangan</label>
-                        <select id="inp-category" name="category" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900">
-                          <option value="Dinding" ${defaultValues.category === 'Dinding' ? 'selected' : ''}>Dinding (2D)</option>
-                          <option value="Rak Display" ${defaultValues.category === 'Rak Display' ? 'selected' : ''}>Rak Display (3D)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label for="inp-room" class="block text-xs font-semibold text-slate-700 mb-1">Ruangan 360°</label>
-                        <select id="inp-room" name="room" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900">
-                          ${ROOM_LIST.map(
-                            (r) =>
-                              `<option value="${r.id}" ${defaultValues.room === r.id ? 'selected' : ''}>${r.code} · ${this.escapeHtml(r.shortName)}</option>`,
-                          ).join('')}
-                        </select>
-                      </div>
-                      <div class="col-span-2 sm:col-span-1">
-                        <label for="inp-price" class="block text-xs font-semibold text-slate-700 mb-1">Harga (IDR)</label>
-                        <input id="inp-price" name="price" type="number" step="10000" value="${defaultValues.price}" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 font-mono tabular-nums" />
-                      </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label for="inp-school" class="block text-xs font-semibold text-slate-700 mb-1">Asal Sekolah</label>
-                        <input id="inp-school" name="school" type="text" value="${this.escapeAttr(defaultValues.school)}" placeholder="SDN 1 Yogyakarta" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400" />
-                      </div>
-                      <div>
-                        <label for="inp-region" class="block text-xs font-semibold text-slate-700 mb-1">Daerah / Provinsi</label>
-                        <input id="inp-region" name="region" type="text" value="${this.escapeAttr(defaultValues.region)}" placeholder="DI Yogyakarta" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400" />
-                      </div>
-                      <div>
-                        <label for="inp-whatsapp" class="block text-xs font-semibold text-slate-700 mb-1">Nomor WhatsApp</label>
-                        <input id="inp-whatsapp" name="whatsapp" type="text" value="${this.escapeAttr(defaultValues.whatsapp)}" placeholder="6281271001001" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 font-mono tabular-nums" />
-                      </div>
-                    </div>
-
-                    <!-- Real-Time 360 Yaw & Pitch Sliders + Smart Positioning Buttons -->
-                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                      <div class="flex flex-wrap items-center justify-between gap-2">
-                        <span class="text-xs font-bold text-slate-800">Koordinat Posisi 360°</span>
-                        <div class="flex flex-wrap items-center gap-1.5">
-                          <button
-                            type="button"
-                            id="btn-capture-camera-angle"
-                            title="Ambil sudut arah pandangan kamera 360° saat ini"
-                            class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-300 hover:border-amber-300 text-[11px] font-semibold transition-colors cursor-pointer"
-                          >
-                            ◎ Ambil Sudut Kamera
-                          </button>
-                          <button
-                            type="button"
-                            id="btn-smart-slot"
-                            title="Cari slot koordinat kosong terbaik di ruangan ini secara otomatis"
-                            class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-semibold transition-colors cursor-pointer"
-                          >
-                            ✦ Posisi Otomatis Smart
-                          </button>
-                        </div>
-                      </div>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <div class="flex justify-between text-xs mb-1">
-                            <label for="inp-yaw" class="font-semibold text-slate-700">Horizontal (Yaw)</label>
-                            <span id="lbl-yaw-val" class="font-mono font-bold tabular-nums text-amber-600">${defaultValues.yaw}°</span>
-                          </div>
-                          <input id="inp-yaw" name="yaw" type="range" min="-180" max="180" step="1" value="${defaultValues.yaw}" class="w-full accent-amber-500 cursor-pointer" />
-                        </div>
-                        <div>
-                          <div class="flex justify-between text-xs mb-1">
-                            <label for="inp-pitch" class="font-semibold text-slate-700">Vertikal (Pitch)</label>
-                            <span id="lbl-pitch-val" class="font-mono font-bold tabular-nums text-amber-600">${defaultValues.pitch}°</span>
-                          </div>
-                          <input id="inp-pitch" name="pitch" type="range" min="-45" max="45" step="1" value="${defaultValues.pitch}" class="w-full accent-amber-500 cursor-pointer" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label for="inp-description" class="block text-xs font-semibold text-slate-700 mb-1">Deskripsi & Narasi Karya</label>
-                      <textarea id="inp-description" name="description" rows="2" placeholder="Ceritakan bahan, teknik pembuatan, dan makna filosofis karya..." class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm text-slate-900 placeholder-slate-400">${this.escapeHtml(defaultValues.description)}</textarea>
-                    </div>
-
-                    <div class="flex items-center gap-3 pt-1">
-                      <button type="submit" id="btn-save-artwork" class="w-full py-2.5 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer">
-                        ${editingArtwork ? 'Simpan Perubahan Karya' : 'Tambahkan Karya ke Galeri 360°'}
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <input
+                        id="inp-artwork-image-file"
+                        type="file"
+                        accept="image/*"
+                        class="hidden"
+                      />
+                      <button
+                        type="button"
+                        id="btn-trigger-form-image-upload"
+                        class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium transition-colors cursor-pointer"
+                      >
+                        Unggah
                       </button>
+                      ${
+                        this.draftArtworkImageUrl
+                          ? `<button
+                              type="button"
+                              id="btn-clear-form-image"
+                              class="px-2 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 text-xs font-medium transition-colors cursor-pointer"
+                            >
+                              Reset
+                            </button>`
+                          : ''
+                      }
                     </div>
-                  </form>
-                </section>
-
-                <!-- Pengaturan Kode User Admin (Default 123456, Dapat Diganti) & Cloud Sync -->
-                <section class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-                  <div class="border-b border-slate-100 pb-3">
-                    <h2 class="text-sm font-bold text-slate-900">
-                      Keamanan & Kode User Admin
-                    </h2>
-                    <p class="text-xs text-slate-500">
-                      Ganti kode user login admin (default: 123456) sesuai kebutuhan pengelola
-                    </p>
                   </div>
 
-                  <form id="form-change-admin-code" class="space-y-3" novalidate>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label for="inp-new-admin-passcode" class="block text-xs font-semibold text-slate-700 mb-1">
-                        Kode User Admin Baru
-                      </label>
-                      <div class="flex gap-2">
-                        <input
-                          id="inp-new-admin-passcode"
-                          type="text"
-                          value="${this.escapeAttr(state.adminPasscode)}"
-                          placeholder="Masukkan kode baru (min. 3 karakter)"
-                          class="flex-1 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-300 text-sm font-mono font-bold text-slate-900 focus:bg-white focus:border-amber-500 focus:outline-none"
-                        />
+                      <label for="inp-title" class="block text-[11px] font-semibold text-slate-600 mb-1">Judul Karya</label>
+                      <input id="inp-title" name="title" type="text" value="${this.escapeAttr(defaultValues.title)}" placeholder="Judul karya" class="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900 focus:border-slate-900 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label for="inp-creator" class="block text-[11px] font-semibold text-slate-600 mb-1">Pencipta</label>
+                      <input id="inp-creator" name="creator" type="text" value="${this.escapeAttr(defaultValues.creator)}" placeholder="Nama pelajar" class="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900 focus:border-slate-900 focus:outline-none" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-2.5">
+                    <div>
+                      <label for="inp-category" class="block text-[11px] font-semibold text-slate-600 mb-1">Pajangan</label>
+                      <select id="inp-category" name="category" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900">
+                        <option value="Dinding" ${defaultValues.category === 'Dinding' ? 'selected' : ''}>Dinding</option>
+                        <option value="Rak Display" ${defaultValues.category === 'Rak Display' ? 'selected' : ''}>Rak Display</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label for="inp-room" class="block text-[11px] font-semibold text-slate-600 mb-1">Ruangan</label>
+                      <select id="inp-room" name="room" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900">
+                        ${ROOM_LIST.map(
+                          (r) =>
+                            `<option value="${r.id}" ${defaultValues.room === r.id ? 'selected' : ''}>${r.code} · ${this.escapeHtml(r.shortName)}</option>`,
+                        ).join('')}
+                      </select>
+                    </div>
+                    <div>
+                      <label for="inp-price" class="block text-[11px] font-semibold text-slate-600 mb-1">Harga (IDR)</label>
+                      <input id="inp-price" name="price" type="number" step="10000" value="${defaultValues.price}" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900 font-mono" />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <div>
+                      <label for="inp-school" class="block text-[11px] font-semibold text-slate-600 mb-1">Sekolah</label>
+                      <input id="inp-school" name="school" type="text" value="${this.escapeAttr(defaultValues.school)}" placeholder="Nama sekolah" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900" />
+                    </div>
+                    <div>
+                      <label for="inp-region" class="block text-[11px] font-semibold text-slate-600 mb-1">Daerah</label>
+                      <input id="inp-region" name="region" type="text" value="${this.escapeAttr(defaultValues.region)}" placeholder="Provinsi" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900" />
+                    </div>
+                    <div>
+                      <label for="inp-whatsapp" class="block text-[11px] font-semibold text-slate-600 mb-1">WhatsApp</label>
+                      <input id="inp-whatsapp" name="whatsapp" type="text" value="${this.escapeAttr(defaultValues.whatsapp)}" placeholder="6285111581115" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900 font-mono" />
+                    </div>
+                  </div>
+
+                  <!-- Minimalist 360 Position Controls -->
+                  <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                      <span class="text-[11px] font-semibold text-slate-700">Posisi 360°</span>
+                      <div class="flex items-center gap-1.5">
                         <button
-                          type="submit"
-                          id="btn-save-admin-code"
-                          class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors shrink-0 cursor-pointer"
+                          type="button"
+                          id="btn-capture-camera-angle"
+                          class="px-2 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-medium cursor-pointer"
                         >
-                          Ganti Kode
+                          Sudut Kamera
+                        </button>
+                        <button
+                          type="button"
+                          id="btn-smart-slot"
+                          class="px-2 py-1 rounded-md bg-white hover:bg-slate-100 text-emerald-700 border border-slate-200 text-[11px] font-medium cursor-pointer"
+                        >
+                          Slot Otomatis
                         </button>
                       </div>
                     </div>
-                    ${
-                      this.adminPasscodeStatusMsg
-                        ? `<div id="admin-passcode-status" role="status" class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl">${this.escapeHtml(this.adminPasscodeStatusMsg)}</div>`
-                        : ''
-                    }
-                  </form>
-
-                  <div class="pt-3 border-t border-slate-100 space-y-2.5">
-                    <div class="text-xs font-bold text-slate-800">Cadangan Cloud & Sinkronisasi Data</div>
-                    <div class="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        id="btn-export-drive"
-                        class="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition-colors cursor-pointer"
-                      >
-                        Simpan ke Drive
-                      </button>
-                      <button
-                        type="button"
-                        id="btn-list-drive"
-                        class="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer"
-                      >
-                        Muat Drive
-                      </button>
-                      <button
-                        type="button"
-                        id="btn-sync-cloudsql"
-                        class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors cursor-pointer"
-                      >
-                        Sinkron Cloud SQL
-                      </button>
-                      <button
-                        type="button"
-                        id="btn-reset-seed"
-                        class="px-3 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer"
-                      >
-                        Pulihkan 18 Karya Awal
-                      </button>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <div class="flex justify-between text-[11px] mb-0.5">
+                          <label for="inp-yaw" class="text-slate-600">Yaw</label>
+                          <span id="lbl-yaw-val" class="font-mono font-semibold text-slate-800">${defaultValues.yaw}°</span>
+                        </div>
+                        <input id="inp-yaw" name="yaw" type="range" min="-180" max="180" step="1" value="${defaultValues.yaw}" class="w-full accent-slate-900 cursor-pointer" />
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-[11px] mb-0.5">
+                          <label for="inp-pitch" class="text-slate-600">Pitch</label>
+                          <span id="lbl-pitch-val" class="font-mono font-semibold text-slate-800">${defaultValues.pitch}°</span>
+                        </div>
+                        <input id="inp-pitch" name="pitch" type="range" min="-45" max="45" step="1" value="${defaultValues.pitch}" class="w-full accent-slate-900 cursor-pointer" />
+                      </div>
                     </div>
-                    ${
-                      this.driveStatusMsg
-                        ? `<div role="status" class="text-xs text-slate-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">${this.escapeHtml(this.driveStatusMsg)}</div>`
-                        : ''
-                    }
-                  </div>
-                </section>
-              </div>
-
-              <!-- Right Column (7 cols): Daftar Koleksi Karya & Moderasi Komentar -->
-              <div class="lg:col-span-7 space-y-6">
-                <!-- Daftar Koleksi Karya -->
-                <section class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-4">
-                  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div>
-                      <h2 class="text-sm font-bold text-slate-900">
-                        Daftar Konten Karya (${filteredArtworks.length} dari ${state.artworks.length})
-                      </h2>
-                      <p class="text-xs text-slate-500">
-                        Unggah gambar di setiap karya, filter ruangan, edit koordinat, atau hapus karya secara langsung
-                      </p>
-                    </div>
-                    <input
-                      id="admin-search-artwork"
-                      type="search"
-                      value="${this.escapeAttr(this.adminSearchQuery)}"
-                      placeholder="Cari judul / pencipta / sekolah..."
-                      class="px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-amber-500 focus:outline-none w-full sm:w-64"
-                    />
                   </div>
 
-                  <!-- Filter Ruangan R1 - R5 -->
-                  <div class="flex flex-wrap gap-1.5">
+                  <div>
+                    <label for="inp-description" class="block text-[11px] font-semibold text-slate-600 mb-1">Deskripsi</label>
+                    <textarea id="inp-description" name="description" rows="2" placeholder="Deskripsi singkat karya..." class="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-slate-900">${this.escapeHtml(defaultValues.description)}</textarea>
+                  </div>
+
+                  <button type="submit" id="btn-save-artwork" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition-colors cursor-pointer">
+                    ${editingArtwork ? 'Simpan Perubahan' : 'Tambah Karya'}
+                  </button>
+                </form>
+              </section>
+
+              <!-- Minimalist Security & Data Management Card -->
+              <section class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-3.5">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Keamanan & Data
+                </h2>
+
+                <form id="form-change-admin-code" class="space-y-2" novalidate>
+                  <label for="inp-new-admin-passcode" class="block text-[11px] font-semibold text-slate-600">
+                    Ubah Kode Akses Admin
+                  </label>
+                  <div class="flex gap-2">
+                    <div class="relative flex-1">
+                      <input
+                        id="inp-new-admin-passcode"
+                        type="${this.showNewPasscode ? 'text' : 'password'}"
+                        value="${this.escapeAttr(state.adminPasscode)}"
+                        autocomplete="new-password"
+                        placeholder="Kode akses baru (min. 4 karakter)"
+                        class="w-full pl-3 pr-14 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        id="btn-toggle-new-pass-visibility"
+                        class="absolute right-1.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:text-slate-800 cursor-pointer"
+                      >
+                        ${this.showNewPasscode ? 'Sembunyi' : 'Lihat'}
+                      </button>
+                    </div>
+                    <button
+                      type="submit"
+                      id="btn-save-admin-code"
+                      class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                  ${
+                    this.adminPasscodeStatusMsg
+                      ? `<div id="admin-passcode-status" role="status" class="text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg">${this.escapeHtml(this.adminPasscodeStatusMsg)}</div>`
+                      : ''
+                  }
+                </form>
+
+                <div class="pt-2.5 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    id="btn-reset-seed"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                  >
+                    Reset 18 Karya Awal
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-sync-cloudsql"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                  >
+                    Sinkron Cloud SQL
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-export-drive"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                  >
+                    Simpan Drive
+                  </button>
+                  <button
+                    type="button"
+                    id="btn-list-drive"
+                    class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                  >
+                    Muat Drive
+                  </button>
+                </div>
+                ${
+                  this.driveStatusMsg
+                    ? `<div role="status" class="text-[11px] text-slate-700 bg-slate-100 p-2 rounded-lg">${this.escapeHtml(this.driveStatusMsg)}</div>`
+                    : ''
+                }
+              </section>
+            </div>
+
+            <!-- Right Column (7 cols): Daftar Karya & Moderasi Komentar -->
+            <div class="lg:col-span-7 space-y-4">
+              <!-- Daftar Karya -->
+              <section class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h2 class="text-sm font-bold text-slate-900">
+                    Daftar Karya (${filteredArtworks.length})
+                  </h2>
+                  <input
+                    id="admin-search-artwork"
+                    type="search"
+                    value="${this.escapeAttr(this.adminSearchQuery)}"
+                    placeholder="Cari karya atau pencipta..."
+                    class="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-slate-900 focus:outline-none w-full sm:w-56"
+                  />
+                </div>
+
+                <!-- Compact Room Filters -->
+                <div class="flex flex-wrap gap-1">
+                  <button
+                    type="button"
+                    data-admin-room-filter="ALL"
+                    class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+                      this.adminRoomFilter === 'ALL'
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }"
+                  >
+                    Semua (${state.artworks.length})
+                  </button>
+                  ${ROOM_LIST.map(
+                    (r) => `
                     <button
                       type="button"
-                      data-admin-room-filter="ALL"
-                      class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                        this.adminRoomFilter === 'ALL'
+                      data-admin-room-filter="${r.id}"
+                      class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+                        this.adminRoomFilter === r.id
                           ? 'bg-slate-900 text-white'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }"
                     >
-                      Semua Ruang (${state.artworks.length})
+                      ${r.code}
                     </button>
-                    ${ROOM_LIST.map(
-                      (r) => `
-                      <button
-                        type="button"
-                        data-admin-room-filter="${r.id}"
-                        class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                          this.adminRoomFilter === r.id
-                            ? 'bg-amber-500 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                        }"
-                      >
-                        ${r.code} · ${this.escapeHtml(r.shortName)}
-                      </button>
-                    `,
-                    ).join('')}
-                  </div>
+                  `,
+                  ).join('')}
+                </div>
 
-                  <div id="admin-artwork-list" class="space-y-2.5 max-h-[540px] overflow-y-auto no-scrollbar pr-1">
-                    ${filteredArtworks
-                      .map(
-                        (art) => `
-                      <div class="p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 transition-colors">
-                        <div class="flex items-center gap-3 min-w-0">
-                          <img
-                            src="${getArtworkPreviewDataUrl(art)}"
-                            alt="${this.escapeAttr(art.title)}"
-                            referrerpolicy="no-referrer"
-                            class="w-16 h-12 rounded-xl object-cover border border-slate-300 shrink-0 bg-white"
-                          />
-                          <div class="min-w-0">
-                            <div class="flex items-center gap-1.5 flex-wrap">
-                              <span class="text-[11px] font-semibold text-amber-700 truncate">
-                                ${ROOMS[art.room]?.code || 'R1'} · ${this.escapeHtml(art.category)} · ${this.escapeHtml(art.school)} (${this.escapeHtml(art.region)})
-                              </span>
-                              ${
-                                art.imageUrl
-                                  ? `<span class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">Gambar Kustom</span>`
-                                  : ''
-                              }
-                            </div>
-                            <div class="text-sm font-bold text-slate-900 truncate">${this.escapeHtml(art.title)}</div>
-                            <div class="text-xs text-slate-500 font-mono tabular-nums">
-                              ${this.escapeHtml(art.creator)} · ${formatIDR(art.price)} · Yaw ${art.yaw}° / Pitch ${art.pitch}°
-                            </div>
+                <!-- Minimalist Artwork Rows -->
+                <div id="admin-artwork-list" class="divide-y divide-slate-100 max-h-[520px] overflow-y-auto no-scrollbar">
+                  ${filteredArtworks
+                    .map(
+                      (art) => `
+                    <div class="py-2.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <img
+                          src="${getArtworkPreviewDataUrl(art)}"
+                          alt="${this.escapeAttr(art.title)}"
+                          referrerpolicy="no-referrer"
+                          class="w-12 h-9 rounded-lg object-cover border border-slate-200 shrink-0 bg-slate-100"
+                        />
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-1.5">
+                            <span class="text-xs font-semibold text-slate-900 truncate">${this.escapeHtml(art.title)}</span>
+                            ${
+                              isCustomArtworkImage(art)
+                                ? `<span class="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium shrink-0">Kustom</span>`
+                                : ''
+                            }
+                          </div>
+                          <div class="text-[11px] text-slate-500 truncate">
+                            ${ROOMS[art.room]?.code || 'R1'} · ${this.escapeHtml(art.creator)} · ${formatIDR(art.price)}
                           </div>
                         </div>
-                        <div class="flex flex-wrap items-center gap-1.5 shrink-0 ml-auto">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            data-upload-art-input="${art.id}"
-                            aria-label="File Gambar ${this.escapeAttr(art.title)}"
-                            class="hidden"
-                          />
-                          <button
-                            type="button"
-                            data-upload-art-btn="${art.id}"
-                            title="Unggah Gambar untuk ${this.escapeAttr(art.title)}"
-                            class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-                          >
-                            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                              <polyline points="17 8 12 3 7 8"/>
-                              <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <span>Unggah Gambar</span>
-                          </button>
-                          ${
-                            art.imageUrl
-                              ? `<button
-                                  type="button"
-                                  data-reset-art-img="${art.id}"
-                                  title="Reset ke Gambar Default"
-                                  class="px-2 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-[11px] font-semibold text-slate-600 transition-colors cursor-pointer"
-                                >
-                                  Reset Foto
-                                </button>`
-                              : ''
-                          }
-                          <button type="button" data-focus-art="${art.id}" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-xs font-semibold text-slate-700 hover:text-amber-700 transition-colors cursor-pointer">
-                            Fokus 360°
-                          </button>
-                          <button type="button" data-edit-art="${art.id}" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-xs font-semibold text-sky-700 transition-colors cursor-pointer">
-                            Edit
-                          </button>
-                          <button type="button" data-delete-art="${art.id}" aria-label="Hapus ${this.escapeAttr(art.title)}" class="px-2.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-xs font-semibold text-rose-600 transition-colors cursor-pointer">
-                            Hapus
-                          </button>
-                        </div>
                       </div>
-                    `,
-                      )
-                      .join('')}
-                  </div>
-                </section>
 
-                <!-- Moderasi Komentar Apresiasi Pengunjung -->
-                <section class="p-5 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-3.5">
-                  <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <h2 class="text-sm font-bold text-slate-900">
-                        Moderasi Komentar Apresiasi (${allCommentsList.length})
-                      </h2>
-                      <p class="text-xs text-slate-500">
-                        Kelola daftar pesan apresiasi pengunjung pada setiap karya
-                      </p>
+                      <div class="flex items-center gap-1 shrink-0 ml-auto">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          data-upload-art-input="${art.id}"
+                          aria-label="File Gambar ${this.escapeAttr(art.title)}"
+                          class="hidden"
+                        />
+                        <button
+                          type="button"
+                          data-upload-art-btn="${art.id}"
+                          title="Unggah Foto"
+                          class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                        >
+                          Foto
+                        </button>
+                        ${
+                          isCustomArtworkImage(art)
+                            ? `<button
+                                type="button"
+                                data-reset-art-img="${art.id}"
+                                title="Reset Foto Default"
+                                class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-medium transition-colors cursor-pointer"
+                              >
+                                Reset
+                              </button>`
+                            : ''
+                        }
+                        <button
+                          type="button"
+                          data-focus-art="${art.id}"
+                          class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
+                        >
+                          360°
+                        </button>
+                        <button
+                          type="button"
+                          data-edit-art="${art.id}"
+                          class="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-900 text-[11px] font-semibold transition-colors cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          data-delete-art="${art.id}"
+                          aria-label="Hapus ${this.escapeAttr(art.title)}"
+                          class="px-2 py-1 rounded-md bg-white hover:bg-rose-50 text-rose-600 text-[11px] font-medium transition-colors cursor-pointer"
+                        >
+                          Hapus
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div class="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
-                    ${
-                      allCommentsList.length === 0
-                        ? `<div class="text-xs text-slate-400 py-3 text-center">Belum ada komentar pengunjung.</div>`
-                        : allCommentsList
-                            .map(
-                              (item) => `
-                              <div class="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
-                                <div class="min-w-0">
-                                  <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-slate-900">${this.escapeHtml(item.visitorName)}</span>
-                                    <span class="text-[11px] text-amber-700 font-medium truncate">pada "${this.escapeHtml(item.artworkTitle)}"</span>
-                                  </div>
-                                  <p class="text-xs text-slate-600 truncate mt-0.5">${this.escapeHtml(item.message)}</p>
+                  `,
+                    )
+                    .join('')}
+                </div>
+              </section>
+
+              <!-- Minimalist Comment Moderation -->
+              <section class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 space-y-3">
+                <h2 class="text-sm font-bold text-slate-900">
+                  Komentar (${allCommentsList.length})
+                </h2>
+                <div class="divide-y divide-slate-100 max-h-52 overflow-y-auto no-scrollbar">
+                  ${
+                    allCommentsList.length === 0
+                      ? `<div class="text-xs text-slate-400 py-3 text-center">Belum ada komentar.</div>`
+                      : allCommentsList
+                          .map(
+                            (item) => `
+                            <div class="py-2 flex items-center justify-between gap-3">
+                              <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                  <span class="text-xs font-semibold text-slate-900">${this.escapeHtml(item.visitorName)}</span>
+                                  <span class="text-[11px] text-slate-400 truncate">· ${this.escapeHtml(item.artworkTitle)}</span>
                                 </div>
-                                <button
-                                  type="button"
-                                  data-delete-comment-art="${item.artworkId}"
-                                  data-delete-comment-id="${item.id}"
-                                  class="px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 text-[11px] font-semibold shrink-0 cursor-pointer"
-                                >
-                                  Hapus
-                                </button>
+                                <p class="text-xs text-slate-600 truncate">${this.escapeHtml(item.message)}</p>
                               </div>
-                            `,
-                            )
-                            .join('')
-                    }
-                  </div>
-                </section>
-              </div>
+                              <button
+                                type="button"
+                                data-delete-comment-art="${item.artworkId}"
+                                data-delete-comment-id="${item.id}"
+                                class="px-2 py-1 rounded-md hover:bg-rose-50 text-rose-600 text-[11px] font-medium shrink-0 cursor-pointer"
+                              >
+                                Hapus
+                              </button>
+                            </div>
+                          `,
+                          )
+                          .join('')
+                  }
+                </div>
+              </section>
             </div>
           </div>
         </div>
@@ -1399,6 +1407,7 @@ export class AdminAndModalsController {
         this.formErrors = [];
         this.formSuccessMsg = '';
         this.adminPasscodeStatusMsg = '';
+        this.showNewPasscode = false;
         galleryStore.getState().setAdminDashboardOpen(false);
       });
 
@@ -1408,7 +1417,15 @@ export class AdminAndModalsController {
         this.formErrors = [];
         this.formSuccessMsg = '';
         this.adminPasscodeStatusMsg = '';
+        this.showNewPasscode = false;
         galleryStore.getState().setAdminAuthenticated(false);
+      });
+
+    this.container
+      .querySelector('#btn-toggle-new-pass-visibility')
+      ?.addEventListener('click', () => {
+        this.showNewPasscode = !this.showNewPasscode;
+        this.render();
       });
 
     this.container
@@ -1429,9 +1446,32 @@ export class AdminAndModalsController {
         this.formErrors = [];
         this.formSuccessMsg = '';
         this.draftArtworkImageUrl = '';
+        this.draftFormFields = null;
         this.lastSyncedEditingId = null;
         galleryStore.getState().setEditingArtwork(null);
       });
+
+    // Helper to snapshot current form values before re-rendering on image upload/reset
+    const snapshotFormFields = () => {
+      const formEl = this.container.querySelector(
+        '#admin-artwork-form',
+      ) as HTMLFormElement | null;
+      if (!formEl) return;
+      const fd = new FormData(formEl);
+      this.draftFormFields = {
+        title: String(fd.get('title') || ''),
+        creator: String(fd.get('creator') || ''),
+        category: ((fd.get('category') as DisplayCategory) || 'Dinding'),
+        room: ((fd.get('room') as RoomId) || 'ruang_1'),
+        price: Number(fd.get('price') || 550000),
+        school: String(fd.get('school') || ''),
+        region: String(fd.get('region') || ''),
+        whatsapp: String(fd.get('whatsapp') || DEFAULT_WHATSAPP_NUMBER),
+        yaw: Number(fd.get('yaw') || 0),
+        pitch: Number(fd.get('pitch') || 0),
+        description: String(fd.get('description') || ''),
+      };
+    };
 
     // Form Image Upload Handler (#btn-trigger-form-image-upload + #inp-artwork-image-file)
     const formFileInput = this.container.querySelector(
@@ -1447,6 +1487,7 @@ export class AdminAndModalsController {
       const file = formFileInput.files?.[0];
       if (!file) return;
       try {
+        snapshotFormFields();
         const compressedDataUrl = await compressUploadedArtworkImage(file);
         this.draftArtworkImageUrl = compressedDataUrl;
         const editId = galleryStore.getState().editingArtworkId;
@@ -1454,10 +1495,9 @@ export class AdminAndModalsController {
           galleryStore.getState().updateArtwork(editId, {
             imageUrl: compressedDataUrl,
           });
-          this.formSuccessMsg = 'Gambar karya berhasil diunggah dan diperbarui.';
+          this.formSuccessMsg = 'Foto karya berhasil diperbarui.';
         } else {
-          this.formSuccessMsg =
-            'Gambar karya berhasil diunggah dan siap disimpan.';
+          this.formSuccessMsg = 'Foto karya siap disimpan.';
         }
         this.formErrors = [];
         this.render();
@@ -1472,18 +1512,19 @@ export class AdminAndModalsController {
     this.container
       .querySelector('#btn-clear-form-image')
       ?.addEventListener('click', () => {
+        snapshotFormFields();
         this.draftArtworkImageUrl = '';
         const editId = galleryStore.getState().editingArtworkId;
         if (editId) {
           galleryStore.getState().updateArtwork(editId, {
             imageUrl: undefined,
           });
-          this.formSuccessMsg = 'Gambar karya dikembalikan ke kanvas default.';
+          this.formSuccessMsg = 'Foto karya dikembalikan ke foto kurasi bawaan.';
         }
         this.render();
       });
 
-    // Direct Image Upload on EVERY Artwork Row in Daftar Konten Karya
+    // Direct Image Upload on EVERY Artwork Row in Daftar Karya
     this.container.querySelectorAll('[data-upload-art-btn]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const artId = btn.getAttribute('data-upload-art-btn');
@@ -1512,7 +1553,7 @@ export class AdminAndModalsController {
               this.draftArtworkImageUrl = compressedDataUrl;
             }
             this.formErrors = [];
-            this.formSuccessMsg = `Gambar untuk karya "${art?.title || artId}" berhasil diunggah dan diperbarui.`;
+            this.formSuccessMsg = `Foto untuk "${art?.title || artId}" berhasil diperbarui.`;
             galleryStore.getState().updateArtwork(artId, {
               imageUrl: compressedDataUrl,
             });
@@ -1535,12 +1576,12 @@ export class AdminAndModalsController {
         const art = galleryStore
           .getState()
           .artworks.find((a) => a.id === artId);
-        this.formSuccessMsg = `Gambar karya "${art?.title || artId}" dikembalikan ke kanvas default.`;
+        this.formSuccessMsg = `Foto "${art?.title || artId}" dikembalikan ke foto bawaan.`;
         galleryStore.getState().updateArtwork(artId, { imageUrl: undefined });
       });
     });
 
-    // Change Admin Passcode (123456 -> custom)
+    // Change Admin Passcode securely (no plain-text leak in status message)
     const changeCodeForm = this.container.querySelector(
       '#form-change-admin-code',
     ) as HTMLFormElement | null;
@@ -1550,13 +1591,14 @@ export class AdminAndModalsController {
         '#inp-new-admin-passcode',
       ) as HTMLInputElement | null;
       const nextCode = (inp?.value || '').trim();
-      if (nextCode.length < 3) {
-        this.adminPasscodeStatusMsg = 'Kode user admin minimal 3 karakter.';
+      if (nextCode.length < 4) {
+        this.adminPasscodeStatusMsg = 'Kode akses minimal 4 karakter.';
         this.render();
         return;
       }
       galleryStore.getState().setAdminPasscode(nextCode);
-      this.adminPasscodeStatusMsg = `Kode user admin berhasil diganti menjadi "${nextCode}".`;
+      this.showNewPasscode = false;
+      this.adminPasscodeStatusMsg = 'Kode akses admin berhasil diperbarui.';
       this.render();
     });
 
@@ -1660,18 +1702,19 @@ export class AdminAndModalsController {
         room: (fd.get('room') as RoomId) || 'ruang_1',
         school: String(fd.get('school') || '').trim(),
         region: String(fd.get('region') || '').trim(),
-        whatsapp: String(fd.get('whatsapp') || '6281271001001').trim(),
+        whatsapp: String(fd.get('whatsapp') || DEFAULT_WHATSAPP_NUMBER).trim(),
         price: Number(fd.get('price')),
         yaw: Number(fd.get('yaw')),
         pitch: Number(fd.get('pitch')),
         description:
           String(fd.get('description') || '').trim() ||
           'Karya budaya pelajar Nusantara terkurasi.',
-        imageUrl: this.draftArtworkImageUrl || undefined,
+        ...(this.draftArtworkImageUrl ? { imageUrl: this.draftArtworkImageUrl } : {}),
       };
 
       const check = validateArtworkInput(candidate);
       if (!check.valid) {
+        this.draftFormFields = candidate;
         this.formErrors = check.errors;
         this.formSuccessMsg = '';
         this.render();
@@ -1679,6 +1722,7 @@ export class AdminAndModalsController {
       }
 
       this.formErrors = [];
+      this.draftFormFields = null;
       const state = galleryStore.getState();
       if (state.editingArtworkId) {
         state.updateArtwork(state.editingArtworkId, candidate);
@@ -1687,8 +1731,7 @@ export class AdminAndModalsController {
         state.setEditingArtwork(null);
         this.formSuccessMsg = `Karya "${candidate.title}" berhasil diperbarui di galeri 360°.`;
       } else {
-        const newArtwork: Artwork = {
-          id: `art-${Date.now()}`,
+        const added = state.addArtwork({
           title: candidate.title!,
           creator: candidate.creator!,
           level: candidate.level!,
@@ -1708,10 +1751,9 @@ export class AdminAndModalsController {
           ...(this.draftArtworkImageUrl
             ? { imageUrl: this.draftArtworkImageUrl }
             : {}),
-        };
+        });
         this.draftArtworkImageUrl = '';
-        state.addArtwork(newArtwork);
-        this.formSuccessMsg = `Karya baru "${newArtwork.title}" berhasil ditambahkan ke galeri 360°.`;
+        this.formSuccessMsg = `Karya baru "${added.title}" berhasil ditambahkan ke galeri 360°.`;
       }
       this.render();
     });
@@ -1721,6 +1763,7 @@ export class AdminAndModalsController {
       ?.addEventListener('click', () => {
         this.formErrors = [];
         this.draftArtworkImageUrl = '';
+        this.draftFormFields = null;
         this.lastSyncedEditingId = null;
         this.formSuccessMsg = '18 karya sampel kurasi Nusantara telah dipulihkan.';
         galleryStore.getState().resetSeedData();

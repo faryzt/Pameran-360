@@ -12,6 +12,7 @@ import {
   resolveGalleryArtwork,
   shortPinTitle,
   getAdjacentArtworkInRoom,
+  getDefaultArtworkImageUrl,
 } from './store.ts';
 import { getArtworkPreviewDataUrl } from './proceduralTextures.ts';
 import {
@@ -140,7 +141,9 @@ export class UIOverlayController {
       }
       if (
         state.isCartOpen !== prevState.isCartOpen ||
-        state.isRepositoryOpen !== prevState.isRepositoryOpen
+        state.isRepositoryOpen !== prevState.isRepositoryOpen ||
+        (state.artworks !== prevState.artworks &&
+          (state.selectedArtworkId || state.isCartOpen || state.isRepositoryOpen))
       ) {
         this.renderModals();
       }
@@ -1600,6 +1603,17 @@ export class UIOverlayController {
     const dialogEl = this.modalLayer.querySelector(
       '#artwork-modal-dialog',
     ) as HTMLElement | null;
+    const modalImgEl = this.modalLayer.querySelector(
+      '#modal-artwork-image',
+    ) as HTMLImageElement | null;
+    if (modalImgEl) {
+      modalImgEl.addEventListener('error', () => {
+        const fallbackUrl = getDefaultArtworkImageUrl(art);
+        if (modalImgEl.src && !modalImgEl.src.endsWith(fallbackUrl)) {
+          modalImgEl.src = fallbackUrl;
+        }
+      });
+    }
 
     for (const evtName of ['pointerdown', 'pointermove', 'pointerup', 'wheel']) {
       backdropEl?.addEventListener(evtName, (e) => {

@@ -20,6 +20,11 @@ import {
   shortestAngleDeltaDeg,
   getAdjacentArtworkInRoom,
   findSmartArtworkSlot,
+  DEFAULT_WHATSAPP_NUMBER,
+  getDefaultArtworkImageUrl,
+  resolveArtworkImageUrl,
+  isCustomArtworkImage,
+  getCuratorExpertComment,
   galleryStore,
 } from './store.ts';
 import {
@@ -99,15 +104,23 @@ test('Galeri (getRepositoryList & resolveGalleryArtwork) returns items and resol
     fullRepo.length,
     REPOSITORY_OTHER_ARTWORKS.length + INITIAL_ARTWORKS.length,
   );
+  for (const art of INITIAL_ARTWORKS) {
+    assert.equal(art.whatsapp, '6285111581115');
+    assert.equal(isCustomArtworkImage(art), false, `Default artwork ${art.id} must not be marked as custom image`);
+  }
   for (const item of fullRepo) {
     assert.ok(item.title.length > 2);
     assert.ok(item.kind.length > 2);
     assert.ok(!item.kind.includes('SD'));
     assert.ok(item.creator.length > 2);
-    assert.ok(item.linkUrl.startsWith('https://wa.me/'));
+    assert.ok(
+      item.linkUrl.startsWith('https://wa.me/6285111581115?text='),
+      `Expected ${item.id} linkUrl to use 6285111581115, got ${item.linkUrl}`,
+    );
     const resolved = resolveGalleryArtwork(item.id, INITIAL_ARTWORKS);
     assert.ok(resolved, `Expected resolveGalleryArtwork to resolve ${item.id}`);
     assert.equal(resolved.title, item.title);
+    assert.equal(resolved.whatsapp, '6285111581115');
     assert.ok(
       resolved.imageUrl && resolved.imageUrl.startsWith('/assets/artworks/'),
       `Expected resolved repository item ${item.id} to have real photograph imageUrl`,
@@ -195,8 +208,9 @@ test('galleryStore cart, Galeri modal, comments deletion, adminPasscode (123456 
     INITIAL_ARTWORKS[0].price * 2 + INITIAL_ARTWORKS[2].price,
   );
 
+  assert.equal(DEFAULT_WHATSAPP_NUMBER, '6285111581115');
   const waUrl = buildWhatsAppUrl(INITIAL_ARTWORKS[0]);
-  assert.ok(waUrl.startsWith('https://wa.me/6281271001001?text='));
+  assert.ok(waUrl.startsWith('https://wa.me/6285111581115?text='));
   assert.ok(decodeURIComponent(waUrl).includes('Pameran Virtual'));
 
   assert.equal(validateCommentInput('A', 'Halo').valid, false);
@@ -208,6 +222,22 @@ test('galleryStore cart, Galeri modal, comments deletion, adminPasscode (123456 
     'art-1',
   );
   assert.ok(initialComments.length >= 1);
+  const curatorComment = initialComments.find((c) => c.visitorName === 'Tim Kurator Pameran Virtual');
+  assert.ok(curatorComment, 'Expected Tim Kurator Pameran Virtual comment to exist');
+  assert.equal(curatorComment.message, getCuratorExpertComment(INITIAL_ARTWORKS[0]));
+  assert.ok(
+    curatorComment.message.includes('Way Kambas') && curatorComment.message.includes('falsafah masyarakat Lampung'),
+    'Expected authoritative budayawan curatorial commentary',
+  );
+
+  // Also verify repository artwork has budayawan comment
+  const repoComments = getArtworkComments(
+    galleryStore.getState().commentsByArtwork,
+    'art-repo-1',
+  );
+  assert.ok(repoComments.length >= 1);
+  assert.equal(repoComments[0].visitorName, 'Tim Kurator Pameran Virtual');
+  assert.ok(repoComments[0].message.includes('Sriwijaya') && repoComments[0].message.includes('Sungai Musi'));
 
   const added = galleryStore.getState().addArtworkComment('art-1', {
     visitorName: 'Siti Rahma',
@@ -239,15 +269,24 @@ test('galleryStore cart, Galeri modal, comments deletion, adminPasscode (123456 
   assert.equal(galleryStore.getState().audioVolume, 70);
   assert.equal(galleryStore.getState().audioMuted, false);
 
-  // Verify custom image upload (imageUrl) and reset for any artwork in the store
+  // Verify custom image upload (imageUrl) and reset logic restores canonical default photo
   const sampleDataUrl = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/';
   galleryStore.getState().updateArtwork('art-1', { imageUrl: sampleDataUrl });
-  const updatedArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1');
-  assert.equal(updatedArt1?.imageUrl, sampleDataUrl);
+  const updatedArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1')!;
+  assert.equal(updatedArt1.imageUrl, sampleDataUrl);
+  assert.equal(isCustomArtworkImage(updatedArt1), true);
+
+  // Resetting imageUrl via updateArtwork('art-1', { imageUrl: undefined }) restores canonical /assets/artworks/art-1.jpg
+  galleryStore.getState().updateArtwork('art-1', { imageUrl: undefined });
+  const resetArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1')!;
+  assert.equal(resetArt1.imageUrl, '/assets/artworks/art-1.jpg');
+  assert.equal(isCustomArtworkImage(resetArt1), false);
+  assert.equal(resolveArtworkImageUrl(undefined, resetArt1), getDefaultArtworkImageUrl(resetArt1));
 
   galleryStore.getState().resetSeedData();
   const restoredArt1 = galleryStore.getState().artworks.find((a) => a.id === 'art-1');
   assert.equal(restoredArt1?.imageUrl, '/assets/artworks/art-1.jpg');
 });
+
 
 

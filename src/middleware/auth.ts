@@ -16,6 +16,12 @@ export const requireAuth = async (
     return res.status(401).json({ error: 'Unauthorized: Missing token' });
   }
 
+  if (!adminAuth) {
+    return res.status(503).json({
+      error: 'Firebase Admin Auth belum dikonfigurasi pada server ini.',
+    });
+  }
+
   const token = authHeader.split('Bearer ')[1];
   try {
     const decodedToken = await adminAuth.verifyIdToken(token);
@@ -26,3 +32,4 @@ export const requireAuth = async (
     return res.status(401).json({ error: 'Unauthorized: Invalid token' });
   }
 };
+

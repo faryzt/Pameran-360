@@ -1,12 +1,50 @@
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import {
   getAuth,
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
-  User,
+  type Auth,
+  type User,
 } from 'firebase/auth';
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseConfigJson from '../../firebase-applet-config.json';
+
+/**
+ * Catatan Arsitektur Firebase Pameran Virtual (Nusantara 360):
+ * - Hanya mengimpor `firebase/app` dan `firebase/auth` (Sign-In Google & OAuth token Drive).
+ * - TIDAK mengimpor `firebase/storage` atau `firebase/firestore` karena unggahan foto karya
+ *   dikompresi secara lokal menjadi Data URL (Canvas WebP/JPEG) dan disimpan di penyimpanan lokal / Cloud SQL.
+ *   Dengan demikian aplikasi tetap berjalan 100% normal meskipun Firebase Storage belum diaktifkan.
+ */
+
+const envMeta =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {};
+
+function pickNonEmpty(primary?: string, fallback?: string): string {
+  const cleanPrimary = typeof primary === 'string' ? primary.trim() : '';
+  if (cleanPrimary.length > 0) return cleanPrimary;
+  const cleanFallback = typeof fallback === 'string' ? fallback.trim() : '';
+  return cleanFallback;
+}
+
+const resolvedConfig = {
+  apiKey: pickNonEmpty(envMeta.VITE_FIREBASE_API_KEY, firebaseConfigJson?.apiKey),
+  authDomain: pickNonEmpty(envMeta.VITE_FIREBASE_AUTH_DOMAIN, firebaseConfigJson?.authDomain),
+  projectId: pickNonEmpty(envMeta.VITE_FIREBASE_PROJECT_ID, firebaseConfigJson?.projectId),
+  appId: pickNonEmpty(envMeta.VITE_FIREBASE_APP_ID, firebaseConfigJson?.appId),
+  ...(pickNonEmpty(envMeta.VITE_FIREBASE_STORAGE_BUCKET, firebaseConfigJson?.storageBucket)
+    ? {
+        storageBucket: pickNonEmpty(
+          envMeta.VITE_FIREBASE_STORAGE_BUCKET,
+          firebaseConfigJson?.storageBucket,
+        ),
+      }
+    : {}),
+};
+
+export const isFirebaseConfigured = Boolean(
+  resolvedConfig.apiKey && resolvedConfig.projectId,
+);
 
 export const SCOPES = [
   'openid',
@@ -15,13 +53,29 @@ export const SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
 ];
 
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleAuthProvider = new GoogleAuthProvider();
-googleAuthProvider.addScope('https://www.googleapis.com/auth/drive.file');
-googleAuthProvider.setCustomParameters({
-  prompt: 'select_account',
-});
+let appInstance: FirebaseApp | null = null;
+let authInstance: Auth | null = null;
+let googleProviderInstance: GoogleAuthProvider | null = null;
+
+if (isFirebaseConfigured) {
+  try {
+    appInstance = getApps().length ? getApps()[0] : initializeApp(resolvedConfig);
+    authInstance = getAuth(appInstance);
+    googleProviderInstance = new GoogleAuthProvider();
+    googleProviderInstance.addScope('https://www.googleapis.com/auth/drive.file');
+    googleProviderInstance.setCustomParameters({
+      prompt: 'select_account',
+    });
+  } catch (err) {
+    console.warn('Firebase Auth fallback mode active (config incomplete or offline):', err);
+    appInstance = null;
+    authInstance = null;
+    googleProviderInstance = null;
+  }
+}
+
+export const auth = authInstance;
+export const googleAuthProvider = googleProviderInstance;
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
@@ -38,33 +92,51 @@ export interface GoogleSignInResult {
 export const initAuth = (
   onAuthSuccess?: (user: User, accessToken: string | null, idToken: string) => void,
   onAuthFailure?: () => void,
-) => {
-  return onAuthStateChanged(auth, async (user: User | null) => {
-    if (user) {
-      try {
-        cachedIdToken = await user.getIdToken();
-        if (cachedAccessToken) {
-          onAuthSuccess?.(user, cachedAccessToken, cachedIdToken);
-        } else if (!isSigningIn) {
-          onAuthSuccess?.(user, null, cachedIdToken);
+): (() => void) => {
+  if (!authInstance) {
+    onAuthFailure?.();
+    return () => {};
+  }
+  try {
+    return onAuthStateChanged(authInstance, async (user: User | null) => {
+      if (user) {
+        try {
+          cachedIdToken = await user.getIdToken();
+          if (cachedAccessToken) {
+            onAuthSuccess?.(user, cachedAccessToken, cachedIdToken);
+          } else if (!isSigningIn) {
+            onAuthSuccess?.(user, null, cachedIdToken);
+          }
+        } catch {
+          cachedAccessToken = null;
+          cachedIdToken = null;
+          onAuthFailure?.();
         }
-      } catch {
+      } else {
         cachedAccessToken = null;
         cachedIdToken = null;
         onAuthFailure?.();
       }
-    } else {
-      cachedAccessToken = null;
-      cachedIdToken = null;
-      onAuthFailure?.();
-    }
-  });
+    });
+  } catch {
+    onAuthFailure?.();
+    return () => {};
+  }
 };
 
 export const googleSignIn = async (): Promise<GoogleSignInResult> => {
+  if (!authInstance || !googleProviderInstance) {
+    return {
+      user: null,
+      accessToken: null,
+      idToken: null,
+      cancelled: true,
+      errorCode: 'auth/not-configured',
+    };
+  }
   if (isSigningIn) {
     return {
-      user: auth.currentUser,
+      user: authInstance.currentUser,
       accessToken: cachedAccessToken,
       idToken: cachedIdToken,
       cancelled: true,
@@ -73,7 +145,7 @@ export const googleSignIn = async (): Promise<GoogleSignInResult> => {
   }
   try {
     isSigningIn = true;
-    const result = await signInWithPopup(auth, googleAuthProvider);
+    const result = await signInWithPopup(authInstance, googleProviderInstance);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     cachedAccessToken = credential?.accessToken || null;
     cachedIdToken = await result.user.getIdToken();
@@ -83,8 +155,9 @@ export const googleSignIn = async (): Promise<GoogleSignInResult> => {
       idToken: cachedIdToken,
       cancelled: false,
     };
-  } catch (error: any) {
-    const errorCode = String(error?.code || error?.message || 'auth/unknown');
+  } catch (error: unknown) {
+    const errObj = error as { code?: string; message?: string } | null;
+    const errorCode = String(errObj?.code || errObj?.message || 'auth/unknown');
     return {
       user: null,
       accessToken: null,
@@ -102,9 +175,9 @@ export const getAccessToken = async (): Promise<string | null> => {
 };
 
 export const getIdToken = async (): Promise<string | null> => {
-  if (auth.currentUser) {
+  if (authInstance?.currentUser) {
     try {
-      cachedIdToken = await auth.currentUser.getIdToken();
+      cachedIdToken = await authInstance.currentUser.getIdToken();
     } catch {
       // ignore token refresh failure
     }
@@ -112,12 +185,15 @@ export const getIdToken = async (): Promise<string | null> => {
   return cachedIdToken;
 };
 
-export const logout = async () => {
-  try {
-    await auth.signOut();
-  } catch {
-    // ignore signOut errors
+export const logout = async (): Promise<void> => {
+  if (authInstance) {
+    try {
+      await authInstance.signOut();
+    } catch {
+      // ignore signOut errors
+    }
   }
   cachedAccessToken = null;
   cachedIdToken = null;
 };
+

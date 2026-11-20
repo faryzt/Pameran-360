@@ -33,8 +33,14 @@ function getAI(): GoogleGenAI {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+  });
   app.use(express.json({ limit: '25mb' }));
 
   // ─── CLOUD SQL DATABASE API ROUTES ───────────────────────────────────────
@@ -70,7 +76,7 @@ async function startServer() {
         pitch: Number(body.pitch),
         room: String(body.room || 'interior'),
         description: String(body.description),
-        whatsapp: String(body.whatsapp || '6281234567890'),
+        whatsapp: String(body.whatsapp || '6285111581115'),
         motifType: String(body.motifType || 'batik'),
         palettePrimary: String(body.palettePrimary || '#d97706'),
         paletteSecondary: String(body.paletteSecondary || '#78350f'),

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Artwork, RoomId, LightingThemeId } from './types.ts';
+import { resolveArtworkImageUrl, getDefaultArtworkImageUrl } from './store.ts';
 
 const previewCache = new Map<string, string>();
 const textureCache = new Map<string, THREE.CanvasTexture>();
@@ -969,10 +970,7 @@ function drawMotifIllustration(ctx: CanvasRenderingContext2D, artwork: Artwork) 
   ctx.restore();
 }
 
-export function getArtworkPreviewDataUrl(artwork: Artwork): string {
-  if (artwork.imageUrl && artwork.imageUrl.trim().length > 0) {
-    return artwork.imageUrl;
-  }
+export function getArtworkProceduralFallbackDataUrl(artwork: Artwork): string {
   const key = `v4_${artwork.id}_${artwork.motifType}_${artwork.palettePrimary}_${artwork.paletteSecondary}`;
   const cached = previewCache.get(key);
   if (cached) return cached;
@@ -982,8 +980,17 @@ export function getArtworkPreviewDataUrl(artwork: Artwork): string {
   return url;
 }
 
+export function getArtworkPreviewDataUrl(artwork: Artwork): string {
+  const resolved = resolveArtworkImageUrl(artwork.imageUrl, artwork);
+  if (resolved) {
+    return resolved;
+  }
+  return getArtworkProceduralFallbackDataUrl(artwork);
+}
+
 export function getArtworkCanvasTexture(artwork: Artwork): THREE.Texture {
-  const imgSig = artwork.imageUrl ? `${artwork.imageUrl.length}_${artwork.imageUrl.slice(-24)}` : 'procedural';
+  const resolvedUrl = resolveArtworkImageUrl(artwork.imageUrl, artwork);
+  const imgSig = resolvedUrl ? `${resolvedUrl.length}_${resolvedUrl.slice(-24)}` : 'procedural';
   const key = `tex_v4_${artwork.id}_${artwork.palettePrimary}_${imgSig}`;
   const existing = textureCache.get(key);
   if (existing) return existing;
@@ -993,7 +1000,7 @@ export function getArtworkCanvasTexture(artwork: Artwork): THREE.Texture {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
 
-  if (artwork.imageUrl) {
+  if (resolvedUrl) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -1004,7 +1011,23 @@ export function getArtworkCanvasTexture(artwork: Artwork): THREE.Texture {
         tex.needsUpdate = true;
       }
     };
-    img.src = artwork.imageUrl;
+    img.onerror = () => {
+      const defaultUrl = getDefaultArtworkImageUrl(artwork);
+      if (defaultUrl && defaultUrl !== resolvedUrl) {
+        const fallbackImg = new Image();
+        fallbackImg.crossOrigin = 'anonymous';
+        fallbackImg.onload = () => {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(fallbackImg, 0, 0, canvas.width, canvas.height);
+            tex.needsUpdate = true;
+          }
+        };
+        fallbackImg.src = defaultUrl;
+      }
+    };
+    img.src = resolvedUrl;
   }
 
   textureCache.set(key, tex);

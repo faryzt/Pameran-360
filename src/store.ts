@@ -11,8 +11,14 @@ import type {
   RoomSpec,
 } from './types.ts';
 
-export const STORAGE_KEY = 'nusantara360_sd_gallery_state_v8';
-const LEGACY_STORAGE_KEY_V6 = 'nusantara360_sd_gallery_state_v7';
+export const STORAGE_KEY = 'pameran_virtual_sd_gallery_state_v10';
+const LEGACY_STORAGE_KEYS = [
+  'pameran_virtual_sd_gallery_state_v9',
+  'nusantara360_sd_gallery_state_v8',
+  'nusantara360_sd_gallery_state_v7',
+];
+
+export const DEFAULT_WHATSAPP_NUMBER = '6285111581115';
 
 export const ROOMS: Record<RoomId, RoomSpec> = {
   ruang_1: {
@@ -297,7 +303,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_2',
     description:
       'Lukisan akrilik dan krayon minyak di atas kanvas karya siswa kelas 5 SDN 1 Metro yang mengisahkan persahabatan gajah Sumatera dengan bunga Rafflesia arnoldii di hutan rawa Taman Nasional Way Kambas.',
-    whatsapp: '6281271001001',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'way_kambas',
     palettePrimary: '#1d4ed8',
     paletteSecondary: '#f59e0b',
@@ -317,7 +323,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_2',
     description:
       'Karya ekspresif cat air dan pastel minyak siswi kelas 6 SD yang menangkap energi gerak Tari Topeng Ghettak khas Pamekasan dengan sapuan warna merah cabai, kuning kunyit, dan prada emas.',
-    whatsapp: '6281271001002',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'topeng_madura',
     palettePrimary: '#b91c1c',
     paletteSecondary: '#fbbf24',
@@ -337,7 +343,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_2',
     description:
       'Lukisan kaca tradisional Cirebon karya siswa kelas 6 SD dengan teknik lukis terbalik menampilkan gradasi awan Megamendung tujuh lapis biru langit dan putih bersih.',
-    whatsapp: '6281271001007',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'megamendung',
     palettePrimary: '#1d4ed8',
     paletteSecondary: '#38bdf8',
@@ -357,7 +363,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_2',
     description:
       'Karya membatik canting tangan siswi kelas 5 SD di atas kain mori primisima dengan perpaduan motif geometris Kawung dan keluwesan ekor burung merak keemasan.',
-    whatsapp: '6281271001009',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'batik_kawung',
     palettePrimary: '#78350f',
     paletteSecondary: '#f59e0b',
@@ -377,7 +383,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_2',
     description:
       'Lukisan cat poster dan spidol akrilik karya siswa kelas 4 SD yang menggambarkan keindahan bawah laut Taman Nasional Bunaken bersama penyu hijau dan terumbu karang warna-warni.',
-    whatsapp: '6281271001005',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'ulos_batak',
     palettePrimary: '#0284c7',
     paletteSecondary: '#fde047',
@@ -399,7 +405,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_3',
     description:
       'Kriya kayu ringan berukir motif tameng Dayak Kenyah dengan pewarna alami merah tanah, kuning kunyit, dan hitam arang dilengkapi hiasan bulu burung enggang buatan tangan.',
-    whatsapp: '6281271001004',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'tameng_dayak',
     palettePrimary: '#991b1b',
     paletteSecondary: '#fef08a',
@@ -419,7 +425,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_3',
     description:
       'Tas rajut tradisional Noken dari serat kulit kayu buatan siswa kelas 6 SD yang dipadukan dengan kriya mahkota burung Cenderawasih kuning keemasan.',
-    whatsapp: '6281271001006',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'noken_papua',
     palettePrimary: '#b45309',
     paletteSecondary: '#fde047',
@@ -439,7 +445,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_3',
     description:
       'Kriya alat musik tradisional Angklung satu oktaf dari bambu hitam pilihan yang dirakit dan ditala langsung oleh siswa kelas 5 SD di Bandung.',
-    whatsapp: '6281271001012',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'keris_ukir',
     palettePrimary: '#713f12',
     paletteSecondary: '#eab308',
@@ -459,7 +465,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_3',
     description:
       'Koleksi patung papier-mâché (bubur kertas daur ulang) warna-warni karya siswi kelas 3 SD yang menampilkan gajah Sumatera, burung merak, dan ikan mas Danau Toba.',
-    whatsapp: '6281271001013',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'garuda_wisnu',
     palettePrimary: '#92400e',
     paletteSecondary: '#f59e0b',
@@ -481,7 +487,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_4',
     description:
       'Karya mozaik ketelitian tinggi dari biji jagung, kacang hijau, beras merah, dan kedelai hitam karya siswi kelas 2 SD yang membentuk taman bunga tropis Indonesia.',
-    whatsapp: '6281271001014',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'gringsing_bali',
     palettePrimary: '#0369a1',
     paletteSecondary: '#fde047',
@@ -501,7 +507,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_4',
     description:
       'Perpaduan lukisan kolase daun kering lereng Gunung Sumbing dan kriya kuda kepang anyaman bambu mini buatan siswa kelas 4 SD.',
-    whatsapp: '6281271001015',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'songket_palembang',
     palettePrimary: '#991b1b',
     paletteSecondary: '#facc15',
@@ -521,7 +527,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_4',
     description:
       'Kriya keranjang anyaman daun lontar dan selendang tenun ikat bermotif kuda sandalwood karya siswi kelas 6 SD di Waingapu.',
-    whatsapp: '6281271001011',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'tenun_sumba',
     palettePrimary: '#0369a1',
     paletteSecondary: '#fdba74',
@@ -543,7 +549,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_5',
     description:
       'Miniatur arsitektur Rumah Gadang Minangkabau dari bilah bambu, kardus tebal, dan serat ijuk aren asli buatan tangan siswa kelas 6 SD.',
-    whatsapp: '6281271001008',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'rumah_gadang',
     palettePrimary: '#991b1b',
     paletteSecondary: '#facc15',
@@ -563,7 +569,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_5',
     description:
       'Maket rumah adat Joglo Jawa dengan empat tiang utama soko guru yang disusun presisi dari ratusan stik kayu es krim dan cat pernis ramah anak.',
-    whatsapp: '6281271001010',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'wayang_kulit',
     palettePrimary: '#b45309',
     paletteSecondary: '#fde047',
@@ -583,7 +589,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_5',
     description:
       'Kriya kayu balsa dan kain belacu buatan tangan siswa kelas 6 SD dari pesisir Bulukumba yang merekonstruksi kapal layar Phinisi tujuh layar.',
-    whatsapp: '6281271001003',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'phinisi',
     palettePrimary: '#92400e',
     paletteSecondary: '#fde68a',
@@ -605,7 +611,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_1',
     description:
       'Kriya gerabah tanah liat bakar Kasongan dengan teknik tempel pilin buatan siswa kelas 5 SD yang menampilkan kendi tradisional dan tokoh jenaka Punakawan.',
-    whatsapp: '6281271001018',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'gerabah_kasongan',
     palettePrimary: '#9a3412',
     paletteSecondary: '#fdba74',
@@ -625,7 +631,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_1',
     description:
       'Kriya daur ulang ramah lingkungan karya siswi kelas 4 SD berbentuk sepasang boneka Ondel-Ondel Betawi lengkap dengan hiasan mahkota kembang kelapa warna-warni.',
-    whatsapp: '6281271001017',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'ondel_betawi',
     palettePrimary: '#dc2626',
     paletteSecondary: '#3b82f6',
@@ -645,7 +651,7 @@ export const INITIAL_ARTWORKS: Artwork[] = [
     room: 'ruang_1',
     description:
       'Kriya instrumen petik tradisional Sasando Haik karya siswa kelas 6 SD di Pulau Rote dari tabung bambu pilihan dan tudung resonansi daun lontar kering.',
-    whatsapp: '6281271001016',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: 'sasando_rote',
     palettePrimary: '#d97706',
     paletteSecondary: '#fef3c7',
@@ -654,9 +660,137 @@ export const INITIAL_ARTWORKS: Artwork[] = [
 ];
 
 /**
+ * Canonical hyper-realistic default image registry for all 18 main artworks
+ * and 12 repository archive items.
+ */
+export const DEFAULT_ARTWORK_IMAGE_MAP: Record<string, string> = {
+  'art-1': '/assets/artworks/art-1.jpg',
+  'art-2': '/assets/artworks/art-2.jpg',
+  'art-3': '/assets/artworks/art-3.jpg',
+  'art-4': '/assets/artworks/art-4.jpg',
+  'art-5': '/assets/artworks/art-5.jpg',
+  'art-6': '/assets/artworks/art-6.jpg',
+  'art-7': '/assets/artworks/art-7.jpg',
+  'art-8': '/assets/artworks/art-8.jpg',
+  'art-9': '/assets/artworks/art-9.jpg',
+  'art-10': '/assets/artworks/art-10.jpg',
+  'art-11': '/assets/artworks/art-11.jpg',
+  'art-12': '/assets/artworks/art-12.jpg',
+  'art-13': '/assets/artworks/art-13.jpg',
+  'art-14': '/assets/artworks/art-14.jpg',
+  'art-15': '/assets/artworks/art-15.jpg',
+  'art-16': '/assets/artworks/art-16.jpg',
+  'art-17': '/assets/artworks/art-17.jpg',
+  'art-18': '/assets/artworks/art-18.jpg',
+  'repo-sd-1': '/assets/artworks/art-3.jpg',
+  'art-repo-1': '/assets/artworks/art-3.jpg',
+  'repo-sd-2': '/assets/artworks/art-repo-gringsing.jpg',
+  'art-repo-2': '/assets/artworks/art-repo-gringsing.jpg',
+  'repo-sd-3': '/assets/artworks/art-repo-wayang.jpg',
+  'art-repo-3': '/assets/artworks/art-repo-wayang.jpg',
+  'repo-sd-4': '/assets/artworks/art-repo-ulos.jpg',
+  'art-repo-4': '/assets/artworks/art-repo-ulos.jpg',
+  'repo-sd-5': '/assets/artworks/art-4.jpg',
+  'art-repo-5': '/assets/artworks/art-4.jpg',
+  'repo-sd-6': '/assets/artworks/art-8.jpg',
+  'art-repo-6': '/assets/artworks/art-8.jpg',
+  'repo-sd-7': '/assets/artworks/art-5.jpg',
+  'art-repo-7': '/assets/artworks/art-5.jpg',
+  'repo-sd-8': '/assets/artworks/art-18.jpg',
+  'art-repo-8': '/assets/artworks/art-18.jpg',
+  'repo-sd-9': '/assets/artworks/art-1.jpg',
+  'art-repo-9': '/assets/artworks/art-1.jpg',
+  'repo-sd-10': '/assets/artworks/art-2.jpg',
+  'art-repo-10': '/assets/artworks/art-2.jpg',
+  'repo-sd-11': '/assets/artworks/art-repo-songket.jpg',
+  'art-repo-11': '/assets/artworks/art-repo-songket.jpg',
+  'repo-sd-12': '/assets/artworks/art-repo-keris.jpg',
+  'art-repo-12': '/assets/artworks/art-repo-keris.jpg',
+};
+
+const MOTIF_FALLBACK_IMAGE_MAP: Record<string, string> = {
+  way_kambas: '/assets/artworks/art-1.jpg',
+  topeng_madura: '/assets/artworks/art-2.jpg',
+  phinisi: '/assets/artworks/art-3.jpg',
+  tameng_dayak: '/assets/artworks/art-4.jpg',
+  ulos_batak: '/assets/artworks/art-5.jpg',
+  noken_papua: '/assets/artworks/art-6.jpg',
+  megamendung: '/assets/artworks/art-7.jpg',
+  rumah_gadang: '/assets/artworks/art-8.jpg',
+  batik_kawung: '/assets/artworks/art-9.jpg',
+  wayang_kulit: '/assets/artworks/art-10.jpg',
+  tenun_sumba: '/assets/artworks/art-11.jpg',
+  keris_ukir: '/assets/artworks/art-12.jpg',
+  garuda_wisnu: '/assets/artworks/art-13.jpg',
+  gringsing_bali: '/assets/artworks/art-14.jpg',
+  songket_palembang: '/assets/artworks/art-15.jpg',
+  sasando_rote: '/assets/artworks/art-16.jpg',
+  ondel_betawi: '/assets/artworks/art-17.jpg',
+  gerabah_kasongan: '/assets/artworks/art-18.jpg',
+};
+
+/**
+ * Returns the canonical hyper-realistic default image URL for an artwork.
+ */
+export function getDefaultArtworkImageUrl(
+  artwork?: Partial<Pick<Artwork, 'id' | 'motifType' | 'category'>> | null,
+): string {
+  if (!artwork) return '/assets/artworks/art-1.jpg';
+  if (artwork.id && DEFAULT_ARTWORK_IMAGE_MAP[artwork.id]) {
+    return DEFAULT_ARTWORK_IMAGE_MAP[artwork.id];
+  }
+  if (artwork.motifType && MOTIF_FALLBACK_IMAGE_MAP[artwork.motifType]) {
+    return MOTIF_FALLBACK_IMAGE_MAP[artwork.motifType];
+  }
+  return artwork.category === 'Rak Display'
+    ? '/assets/artworks/art-repo-garuda.jpg'
+    : '/assets/artworks/art-9.jpg';
+}
+
+/**
+ * Normalizes any image URL (DataURL, absolute URL, or relative asset path)
+ * and guarantees a valid fallback photograph if empty.
+ */
+export function resolveArtworkImageUrl(
+  rawUrl?: string | null,
+  fallbackArtwork?: Partial<Pick<Artwork, 'id' | 'motifType' | 'category'>> | null,
+): string {
+  const trimmed = typeof rawUrl === 'string' ? rawUrl.trim() : '';
+  if (!trimmed) {
+    return getDefaultArtworkImageUrl(fallbackArtwork);
+  }
+  if (
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/')
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('./')) {
+    return '/' + trimmed.slice(2);
+  }
+  return '/' + trimmed;
+}
+
+/**
+ * Determines whether an artwork is currently using a user-uploaded custom image
+ * rather than its canonical curated museum photograph.
+ */
+export function isCustomArtworkImage(
+  artwork?: Partial<Pick<Artwork, 'id' | 'imageUrl' | 'motifType' | 'category'>> | null,
+): boolean {
+  if (!artwork || typeof artwork.imageUrl !== 'string') return false;
+  const trimmed = artwork.imageUrl.trim();
+  if (!trimmed) return false;
+  const canonical = getDefaultArtworkImageUrl(artwork);
+  return trimmed !== canonical;
+}
+
+/**
  * Curated Repository Archive of Additional Elementary School (SD) Student Artworks
- * displayed inside the "Lemari Repositori Karya SD" modal.
- * Contains strictly: Nama Karya (title), Jenis Karya (kind), Nama Pencipta (creator), and Tautan (linkUrl).
+ * displayed inside the "Galeri" modal.
  */
 export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
   {
@@ -665,7 +799,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Lukisan Cat Air',
     creator: 'Rizky Pratama · SDN 12 Palembang',
     linkUrl:
-      'https://wa.me/6281271001101?text=Halo%20Rizky%20Pratama%20(SDN%2012%20Palembang)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Jembatan%20Ampera%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Rizky%20Pratama%20(SDN%2012%20Palembang)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Jembatan%20Ampera%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-1',
   },
   {
@@ -674,7 +808,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kriya Anyaman',
     creator: 'Ni Luh Sari Dewi · SDN 2 Gianyar',
     linkUrl:
-      'https://wa.me/6281271001102?text=Halo%20Ni%20Luh%20Sari%20Dewi%20(SDN%202%20Gianyar)%2C%20saya%20mengapresiasi%20karya%20Anyaman%20Tikar%20Pandan%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Ni%20Luh%20Sari%20Dewi%20(SDN%202%20Gianyar)%2C%20saya%20mengapresiasi%20karya%20Anyaman%20Tikar%20Pandan%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-2',
   },
   {
@@ -683,7 +817,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kriya Daur Ulang',
     creator: 'Danang Wibowo · SDN Keputran 1 Yogyakarta',
     linkUrl:
-      'https://wa.me/6281271001103?text=Halo%20Danang%20Wibowo%20(SDN%20Keputran%201)%2C%20saya%20mengapresiasi%20karya%20Wayang%20Kardus%20Gatotkaca%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Danang%20Wibowo%20(SDN%20Keputran%201)%2C%20saya%20mengapresiasi%20karya%20Wayang%20Kardus%20Gatotkaca%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-3',
   },
   {
@@ -692,7 +826,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Wastra Batik',
     creator: 'Nadia Borneo Putri · SDN 005 Tenggarong',
     linkUrl:
-      'https://wa.me/6281271001104?text=Halo%20Nadia%20Borneo%20Putri%20(SDN%20005%20Tenggarong)%2C%20saya%20mengapresiasi%20karya%20Batik%20Jumputan%20Pelangi%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Nadia%20Borneo%20Putri%20(SDN%20005%20Tenggarong)%2C%20saya%20mengapresiasi%20karya%20Batik%20Jumputan%20Pelangi%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-4',
   },
   {
@@ -701,7 +835,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kolase & Mozaik',
     creator: 'Samuel Dayakarsa · SDN 1 Palangka Raya',
     linkUrl:
-      'https://wa.me/6281271001105?text=Halo%20Samuel%20Dayakarsa%20(SDN%201%20Palangka%20Raya)%2C%20saya%20mengapresiasi%20karya%20Kolase%20Kulit%20Telur%20Burung%20Enggang%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Samuel%20Dayakarsa%20(SDN%201%20Palangka%20Raya)%2C%20saya%20mengapresiasi%20karya%20Kolase%20Kulit%20Telur%20Burung%20Enggang%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-5',
   },
   {
@@ -710,7 +844,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Diorama Arsitektur',
     creator: 'Melkior Tabuni · SD Inpres Wamena',
     linkUrl:
-      'https://wa.me/6281271001106?text=Halo%20Melkior%20Tabuni%20(SD%20Inpres%20Wamena)%2C%20saya%20mengapresiasi%20karya%20Miniatur%20Rumah%20Honai%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Melkior%20Tabuni%20(SD%20Inpres%20Wamena)%2C%20saya%20mengapresiasi%20karya%20Miniatur%20Rumah%20Honai%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-6',
   },
   {
@@ -719,7 +853,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Lukisan Akrilik',
     creator: 'Gracia Mansoben · SD YPK Sorong',
     linkUrl:
-      'https://wa.me/6281271001107?text=Halo%20Gracia%20Mansoben%20(SD%20YPK%20Sorong)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Raja%20Ampat%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Gracia%20Mansoben%20(SD%20YPK%20Sorong)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Raja%20Ampat%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-7',
   },
   {
@@ -728,7 +862,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Keramik Terakota',
     creator: 'Fajar Hidayat · SDN 1 Plered Purwakarta',
     linkUrl:
-      'https://wa.me/6281271001108?text=Halo%20Fajar%20Hidayat%20(SDN%201%20Plered)%2C%20saya%20mengapresiasi%20karya%20Celengan%20Tanah%20Liat%20Ayam%20Jago%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Fajar%20Hidayat%20(SDN%201%20Plered)%2C%20saya%20mengapresiasi%20karya%20Celengan%20Tanah%20Liat%20Ayam%20Jago%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-8',
   },
   {
@@ -737,7 +871,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Lukisan Krayon',
     creator: 'Kirana Maharani · SDN Pakem 1 Sleman',
     linkUrl:
-      'https://wa.me/6281271001109?text=Halo%20Kirana%20Maharani%20(SDN%20Pakem%201)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Panen%20Padi%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Kirana%20Maharani%20(SDN%20Pakem%201)%2C%20saya%20mengapresiasi%20karya%20Lukisan%20Panen%20Padi%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-9',
   },
   {
@@ -746,7 +880,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kriya Topeng',
     creator: 'Bintang Saputra · SDN Tumpang 1 Malang',
     linkUrl:
-      'https://wa.me/6281271001110?text=Halo%20Bintang%20Saputra%20(SDN%20Tumpang%201)%2C%20saya%20mengapresiasi%20karya%20Topeng%20Panji%20Daur%20Ulang%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Bintang%20Saputra%20(SDN%20Tumpang%201)%2C%20saya%20mengapresiasi%20karya%20Topeng%20Panji%20Daur%20Ulang%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-10',
   },
   {
@@ -755,7 +889,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kriya Tekstil',
     creator: 'Salsabila Humaira · SDN 004 Pekanbaru',
     linkUrl:
-      'https://wa.me/6281271001111?text=Halo%20Salsabila%20Humaira%20(SDN%20004%20Pekanbaru)%2C%20saya%20mengapresiasi%20karya%20Sulam%20Motif%20Pucuk%20Rebung%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Salsabila%20Humaira%20(SDN%20004%20Pekanbaru)%2C%20saya%20mengapresiasi%20karya%20Sulam%20Motif%20Pucuk%20Rebung%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-11',
   },
   {
@@ -764,7 +898,7 @@ export const REPOSITORY_OTHER_ARTWORKS: RepositoryArtworkItem[] = [
     kind: 'Kriya Bambu',
     creator: 'Stevano Pattinasarany · SDN 1 Ambon',
     linkUrl:
-      'https://wa.me/6281271001112?text=Halo%20Stevano%20Pattinasarany%20(SDN%201%20Ambon)%2C%20saya%20mengapresiasi%20karya%20Miniatur%20Kapal%20Cadik%20Bambu%20di%20Pameran%20Virtual.',
+      'https://wa.me/6285111581115?text=Halo%20Stevano%20Pattinasarany%20(SDN%201%20Ambon)%2C%20saya%20mengapresiasi%20karya%20Miniatur%20Kapal%20Cadik%20Bambu%20di%20Pameran%20Virtual.',
     linkedArtworkId: 'art-repo-12',
   },
 ];
@@ -788,7 +922,12 @@ export function resolveGalleryArtwork(
   const direct = artworks.find(
     (a) => a.id === itemOrArtworkId || `repo-${a.id}` === itemOrArtworkId,
   );
-  if (direct) return direct;
+  if (direct) {
+    return {
+      ...direct,
+      imageUrl: resolveArtworkImageUrl(direct.imageUrl, direct),
+    };
+  }
 
   const repoItem = REPOSITORY_OTHER_ARTWORKS.find(
     (r) => r.id === itemOrArtworkId || r.linkedArtworkId === itemOrArtworkId,
@@ -803,23 +942,9 @@ export function resolveGalleryArtwork(
     repoItem.kind.toLowerCase().includes('diorama') ||
     repoItem.kind.toLowerCase().includes('keramik');
 
-  const repoImageMap: Record<string, string> = {
-    'repo-sd-1': '/assets/artworks/art-3.jpg',
-    'repo-sd-2': '/assets/artworks/art-repo-gringsing.jpg',
-    'repo-sd-3': '/assets/artworks/art-repo-wayang.jpg',
-    'repo-sd-4': '/assets/artworks/art-repo-ulos.jpg',
-    'repo-sd-5': '/assets/artworks/art-4.jpg',
-    'repo-sd-6': '/assets/artworks/art-8.jpg',
-    'repo-sd-7': '/assets/artworks/art-5.jpg',
-    'repo-sd-8': '/assets/artworks/art-18.jpg',
-    'repo-sd-9': '/assets/artworks/art-1.jpg',
-    'repo-sd-10': '/assets/artworks/art-2.jpg',
-    'repo-sd-11': '/assets/artworks/art-repo-songket.jpg',
-    'repo-sd-12': '/assets/artworks/art-3.jpg',
-  };
-
+  const resolvedId = repoItem.linkedArtworkId || repoItem.id;
   return {
-    id: repoItem.linkedArtworkId || repoItem.id,
+    id: resolvedId,
     title: repoItem.title,
     creator: creatorName,
     level: 'SD',
@@ -831,11 +956,14 @@ export function resolveGalleryArtwork(
     pitch: 2,
     room: 'ruang_5',
     description: `${repoItem.title} merupakan karya ${repoItem.kind.toLowerCase()} ciptaan ${creatorName} (${schoolName}) yang mengangkat kekayaan tradisi dan keindahan budaya Nusantara.`,
-    whatsapp: '6281271001101',
+    whatsapp: DEFAULT_WHATSAPP_NUMBER,
     motifType: is3D ? 'phinisi' : 'batik_kawung',
     palettePrimary: '#d97706',
     paletteSecondary: '#1e293b',
-    imageUrl: repoImageMap[repoItem.id] || '/assets/artworks/art-repo-garuda.jpg',
+    imageUrl:
+      DEFAULT_ARTWORK_IMAGE_MAP[repoItem.id] ||
+      DEFAULT_ARTWORK_IMAGE_MAP[resolvedId] ||
+      '/assets/artworks/art-repo-garuda.jpg',
   };
 }
 
@@ -886,7 +1014,8 @@ export function formatIDR(amount: number): string {
 }
 
 export function buildWhatsAppUrl(artwork: Artwork): string {
-  const cleanPhone = (artwork.whatsapp || '6281271001001').replace(/\D/g, '');
+  const rawPhone = (artwork.whatsapp || DEFAULT_WHATSAPP_NUMBER).replace(/\D/g, '');
+  const cleanPhone = rawPhone || DEFAULT_WHATSAPP_NUMBER;
   const message = `Halo ${artwork.creator} (${artwork.school} - ${artwork.region}), saya tertarik untuk mengapresiasi dan membeli karya "${artwork.title}" seharga ${formatIDR(artwork.price)} di Pameran Virtual.`;
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
@@ -1039,41 +1168,119 @@ export function calculateCartTotals(cart: CartItem[]): {
   return { totalItems, totalPrice };
 }
 
-export const INITIAL_COMMENTS: Record<string, import('./types.ts').ArtworkComment[]> = {
-  'art-1': [
-    {
-      id: 'cmt-seed-1',
-      artworkId: 'art-1',
-      visitorName: 'Ibu Ratna Dewi',
-      badge: 'Apresiasi Tinggi',
-      message:
-        'Komposisi warna hutan rawa Way Kambas dan ekspresi gajah Sumatera sangat hidup. Teruslah melukis flora dan fauna Indonesia, Bima!',
-      createdAt: 'Baru saja',
-    },
-  ],
-  'art-2': [
-    {
-      id: 'cmt-seed-2',
-      artworkId: 'art-2',
-      visitorName: 'Pak Hendra Wijaya',
-      badge: 'Semangat Berkarya',
-      message:
-        'Goresan warna merah dan emas pada Tari Topeng Pamekasan sangat berani dan ekspresif.',
-      createdAt: '10 menit lalu',
-    },
-  ],
-  'art-17': [
-    {
-      id: 'cmt-seed-17',
-      artworkId: 'art-17',
-      visitorName: 'Kak Nadia Putri',
-      badge: 'Semangat Berkarya',
-      message:
-        'Kreatif sekali menampilkan sepasang Ondel-Ondel lengkap dengan kembang kelapa yang rapi!',
-      createdAt: '15 menit lalu',
-    },
-  ],
+/**
+ * Bespoke curatorial reviews written in the authoritative, poetic, and scholarly voice
+ * of an Indonesian cultural expert & senior budayawan for "Tim Kurator Pameran Virtual".
+ */
+export const CURATOR_EXPERT_COMMENTS: Record<string, string> = {
+  'art-1':
+    'Menilik gurat ekologis dalam karya ini, sang pelukis muda berhasil menghadirkan kosmologi hutan rawa Way Kambas sebagai ruang hidup yang sakral. Gajah Sumatera tidak sekadar dilukis sebagai objek fauna, melainkan simbol penjaga keseimbangan alam dalam falsafah masyarakat Lampung—sebuah kepekaan artistik yang melampaui usianya.',
+  'art-2':
+    'Ketegasan sapuan merah cabai, kuning kunyit, dan prada emas pada kanvas ini menangkap spirit "Ghettak" dalam tradisi Topeng Dhalang Madura. Ada keberanian watak, kejujuran ekspresi pesisir, serta ritme gerak ketipung yang seolah berdenyut hidup di balik goresan kuas sang perupa cilik.',
+  'art-3':
+    'Warisan maritim Panrita Lopi dari Tanah Beru terwujud dengan ketekunan luar biasa pada rekonstruksi Phinisi tujuh layar ini. Dua tiang agung dan tujuh lembar layarnya menyiratkan falsafah Bugis-Makassar tentang ketangguhan mengarungi tujuh samudra kehidupan dengan bekal ilmu, adab, dan keberanian.',
+  'art-4':
+    'Kriya tameng Talawang ini memancarkan estetika sulur tumbuhan paku dan paruh Enggang khas Dayak Kenyah. Perpaduan pigmen alami merah tanah, kuning kunyit, dan hitam jelaga menegaskan makna pelindung batin serta keharmonisan manusia Kalimantan dengan rimba raya dan leluhurnya.',
+  'art-5':
+    'Melalui tata warna bawah laut yang bening dan berlapis, karya ini merayakan kearifan bahari masyarakat Minahasa dan kepulauan Sulawesi Utara. Kehadiran penyu hijau di antara gugusan koral Bunaken menjadi pengingat puitis akan tanggung jawab generasi muda menjaga pusaka samudra Nusantara.',
+  'art-6':
+    'Simpul demi simpul serat kulit kayu pada Noken ini menyimpan filosofi rahim kehidupan, kemandirian, dan kasih sayang masyarakat Lembah Baliem yang telah diakui UNESCO. Disandingkan dengan mahkota Cenderawasih keemasan, karya ini menjadi penanda martabat budaya Papua yang luhur.',
+  'art-7':
+    'Teknik lukis kaca terbalik (reverse glass painting) menuntut kesabaran batin karena setiap lapis garis harus digoreskan dari tahap paling akhir ke awal. Gradasi tujuh lapis awan Megamendung biru ini mencerminkan akulturasi budaya keraton Cirebon yang teduh, mengayomi, dan penuh pengendalian diri.',
+  'art-8':
+    'Kelengkungan atap gonjong berbalut ijuk aren pada diorama ini menghidupkan falsafah "Alam Takambang Jadi Guru" dari ranah Minangkabau. Proporsi panggung dan siluet tanduk kerbaunya menunjukkan pemahaman konstruktif yang matang terhadap arsitektur vernakular tahan gempa warisan leluhur.',
+  'art-9':
+    'Perpaduan pakem geometris Kawung—simbol kemurnian hati dan empat penjuru energi semesta dalam falsafah Jawa—dengan luwesnya ekor burung merak menghasilkan dialog visual yang anggun. Keterampilan menorehkan malam panas dengan canting di atas mori primisima ini patut mendapat apresiasi tertinggi.',
+  'art-10':
+    'Empat tiang utama Soko Guru yang menopang atap tajug Joglo pada maket ini melambangkan empat pilar keteguhan batin dan keterbukaan masyarakat Jawa dalam menyambut sesama. Keteraturan susunan bilah kayunya memperlihatkan ketajaman rasa ruang dan penghormatan terhadap tata arsitektur keraton.',
+  'art-11':
+    'Motif kuda Sandalwood pada helai tenun ikat dan rapatnya anyaman pucuk lontar ini merekam jejak tradisi Marapu di padang sabana Sumba Timur. Setiap ikatan benang dan bilah daun menjadi bahasa rupa yang menuturkan keberanian, penghormatan pada alam kering yang tangguh, serta ketekunan kriya timur Indonesia.',
+  'art-12':
+    'Dari sebatang bambu hitam Wulung yang diraut dan ditala dengan kepekaan telinga, lahirlah harmoni instrumen Sunda yang menganut falsafah "Silih Asah, Silih Asih, Silih Asuh". Setiap tabung nada mengajarkan bahwa keindahan bunyi hanya tercipta bila setiap unsur saling melengkapi dalam kebersamaan.',
+  'art-13':
+    'Mengolah limbah kertas menjadi tiga figur satwa endemik Nusantara adalah wujud nyata laku budaya ramah lingkungan. Tekstur papier-mâché yang ekspresif dengan palet warna cerah memperlihatkan bagaimana daya cipta anak bangsa mampu menyulap bahan sederhana menjadi monumen apresiasi hayati.',
+  'art-14':
+    'Ketelatenan menyusun ribuan bulir jagung, kacang hijau, beras merah, dan kedelai hitam ini mencerminkan etos agraris Nusantara yang menghargai setiap butir hasil bumi. Kontras tekstur dan rona alami biji-bijian tersebut melahirkan komposisi taman tropis yang jujur, hangat, dan bernilai estetis tinggi.',
+  'art-15':
+    'Pertemuan antara anyaman bambu Kuda Kepang dan kolase dedaunan kering lereng Gunung Sumbing menghadirkan aroma tanah desa dan semangat kesenian rakyat Jawa Tengah. Karya ini merangkum energi gerak ritmis Jaran Kepang sekaligus keakraban anak-anak pegunungan dengan lanskap alamnya.',
+  'art-16':
+    'Tabung bambu berpadu dengan tudung resonansi daun lontar (haik) pada Sasando ini adalah mahakarya akustik tradisional kepulauan Rote. Lengkungan lontarnya tidak hanya memantulkan petikan dawai yang syahdu, tetapi juga merangkum kearifan masyarakat kepulauan dalam menyelaraskan kriya dengan hembusan angin selatan.',
+  'art-17':
+    'Sepasang figur Ondel-Ondel dengan wajah merah yang tegas dan putih yang teduh ini merepresentasikan dualitas penjaga kampung dalam kosmologi budaya Betawi. Rangkaian kembang kelapa yang menjuntai di kepala menyimbolkan harapan agar generasi muda tumbuh bermanfaat layaknya pohon kelapa dari akar hingga pucuknya.',
+  'art-18':
+    'Teknik tempel-pilin tanah liat Kasongan pada figur Punakawan dan kendi terakota ini menghidupkan kembali filosofi kerakyatan Jawa yang bersahaja namun sarat kebijaksanaan. Kehangatan warna tanah bakar menjadi pengingat bahwa manusia berasal dari bumi dan semestinya hidup membumi serta menebar keteduhan.',
+  'art-repo-1':
+    'Siluet Jembatan Ampera yang membelah Sungai Musi bersama laju perahu Bidar dalam sapuan cat air ini menghidupkan kembali memori peradaban sungai Sriwijaya yang dinamis dan penuh semangat gotong royong.',
+  'art-repo-2':
+    'Kerapatan jalinan daun pandan dengan pewarna nabati pada tikar Gianyar ini mencerminkan konsep Tri Hita Karana—keselarasan manusia dengan alam dan tradisi kriya Bali yang diwariskan lintas generasi.',
+  'art-repo-3':
+    'Transformasi kardus daur ulang menjadi tokoh satria Gatotkaca berotot kawat tulang besi membuktikan bahwa pakem tatah sungging wayang kulit Jawa tetap relevan dan hidup dalam medium kontemporer.',
+  'art-repo-4':
+    'Teknik ikat celup jumputan dengan rona pelangi Sungai Mahakam ini memperlihatkan kekayaan tradisi wastra Kutai yang ceria, cair, dan sarat simbol keberkahan air kehidupan.',
+  'art-repo-5':
+    'Mozaik cangkang telur yang membentuk figur Burung Enggang Gading ini bukan sekadar latihan ketelitian tangan, melainkan penghormatan terhadap simbol keluhuran dan perdamaian masyarakat Dayak Kalimantan.',
+  'art-repo-6':
+    'Rekonstruksi rumah bundar Honai beratap jerami ini menyiratkan kearifan arsitektur pegunungan tengah Papua dalam meredam dinginnya Lembah Baliem sekaligus menjaga hangatnya persaudaraan.',
+  'art-repo-7':
+    'Komposisi akrilik karang Raja Ampat ini menangkap denyut jantung segitiga terumbu karang dunia di tanah Papua Barat Daya dengan kepekaan warna bahari yang memukau.',
+  'art-repo-8':
+    'Bentuk ayam jago pada celengan tanah liat Plered ini meneruskan tradisi gerabah Sunda yang sejak berabad silam mengajarkan kebajikan hemat, kemandirian, dan rasa syukur sejak usia dini.',
+  'art-repo-9':
+    'Kuning keemasan bulir padi di bawah bayang agung Gunung Merapi ini merekam kosmologi masyarakat agraris Mataram yang memuliakan kesuburan tanah vulkanik dan tradisi panen bersama.',
+  'art-repo-10':
+    'Karakter Topeng Malangan tokoh Panji yang dibentuk dari bubur kertas daur ulang ini mempertahankan kehalusan garis wajah yang melambangkan keluhuran budi dan ketenangan batin.',
+  'art-repo-11':
+    'Motif Pucuk Rebung pada sulaman benang Melayu Riau ini mengandung petuah adat yang dalam: sebagaimana rebung tumbuh lurus menjulang, demikianlah generasi muda menuntut ilmu dengan adab dan keteguhan.',
+  'art-repo-12':
+    'Konstruksi perahu bercadik bambu khas kepulauan Maluku ini adalah kesaksian kecerdasan bahari leluhur Timur Nusantara dalam menaklukkan gelombang Laut Banda dengan keseimbangan sempurna.',
 };
+
+export function getCuratorExpertComment(
+  artworkOrId: string | Partial<Artwork>,
+  artwork?: Partial<Artwork> | null,
+): string {
+  const rawId =
+    typeof artworkOrId === 'string'
+      ? artworkOrId
+      : artworkOrId?.id || artwork?.id || '';
+  const normalizedId = rawId.startsWith('repo-sd-')
+    ? `art-${rawId.replace('repo-sd-', 'repo-')}`
+    : rawId;
+  if (normalizedId && CURATOR_EXPERT_COMMENTS[normalizedId]) {
+    return CURATOR_EXPERT_COMMENTS[normalizedId];
+  }
+  if (rawId && CURATOR_EXPERT_COMMENTS[rawId]) {
+    return CURATOR_EXPERT_COMMENTS[rawId];
+  }
+  const passedArtwork =
+    typeof artworkOrId === 'object' && artworkOrId !== null
+      ? artworkOrId
+      : artwork;
+  const found =
+    passedArtwork ||
+    INITIAL_ARTWORKS.find((a) => a.id === rawId || a.id === normalizedId) ||
+    resolveGalleryArtwork(rawId, INITIAL_ARTWORKS);
+  if (found && found.title) {
+    return `Menelaah karya "${found.title}" dari ${found.region || 'Nusantara'}, tampak kematangan rasa estetika dan penghormatan yang tulus terhadap akar kearifan lokal. Pilihan medium, ketekunan garap, serta simbolisme budaya yang dihadirkan ${found.creator || 'perupa muda ini'} menjadikan karya ini bukan sekadar objek visual, melainkan penanda kesinambungan jiwa kebudayaan Indonesia di tangan generasi penerus.`;
+  }
+  return 'Sebuah pencapaian estetika pelajar yang merangkum kearifan lokal, ketekunan kriya, dan kedalaman makna filosofis tradisi Nusantara dengan kepekaan artistik yang melampaui usianya.';
+}
+
+export const INITIAL_COMMENTS: Record<string, import('./types.ts').ArtworkComment[]> = Object.fromEntries(
+  INITIAL_ARTWORKS.map((art) => [
+    art.id,
+    [
+      {
+        id: `cmt-curator-${art.id}`,
+        artworkId: art.id,
+        visitorName: 'Tim Kurator Pameran Virtual',
+        badge: 'Apresiasi Tinggi',
+        message: getCuratorExpertComment(art.id, art),
+        createdAt: 'Kurasi Ahli Budaya',
+      },
+    ],
+  ]),
+);
 
 export function getArtworkComments(
   commentsByArtwork: Record<string, import('./types.ts').ArtworkComment[]>,
@@ -1081,7 +1288,19 @@ export function getArtworkComments(
 ): import('./types.ts').ArtworkComment[] {
   const list = commentsByArtwork[artworkId];
   if (Array.isArray(list) && list.length > 0) {
-    return list;
+    return list.map((c) => {
+      if (
+        c.visitorName === 'Tim Kurator Pameran Virtual' ||
+        c.visitorName === 'Tim Kurator Nusantara 360'
+      ) {
+        return {
+          ...c,
+          visitorName: 'Tim Kurator Pameran Virtual',
+          message: getCuratorExpertComment(artworkId),
+        };
+      }
+      return c;
+    });
   }
   return [
     {
@@ -1089,9 +1308,8 @@ export function getArtworkComments(
       artworkId,
       visitorName: 'Tim Kurator Pameran Virtual',
       badge: 'Apresiasi Tinggi',
-      message:
-        'Karya orisinal pelajar yang mengangkat kekayaan budaya daerah dengan imajinasi dan ketelitian yang membanggakan. Mari berikan apresiasi Anda!',
-      createdAt: 'Hari ini',
+      message: getCuratorExpertComment(artworkId),
+      createdAt: 'Kurasi Ahli Budaya',
     },
   ];
 }
@@ -1176,6 +1394,49 @@ export interface GalleryState {
   clearCart: () => void;
 }
 
+function normalizePersistedComments(
+  rawComments: Record<string, import('./types.ts').ArtworkComment[]> | undefined,
+): Record<string, import('./types.ts').ArtworkComment[]> {
+  const merged: Record<string, import('./types.ts').ArtworkComment[]> = {
+    ...INITIAL_COMMENTS,
+  };
+  if (!rawComments || typeof rawComments !== 'object') {
+    return merged;
+  }
+  for (const [artId, list] of Object.entries(rawComments)) {
+    if (!Array.isArray(list) || list.length === 0) continue;
+    const upgraded = list.map((c) => {
+      if (
+        c.visitorName === 'Tim Kurator Pameran Virtual' ||
+        c.visitorName === 'Tim Kurator Nusantara 360'
+      ) {
+        return {
+          ...c,
+          visitorName: 'Tim Kurator Pameran Virtual',
+          message: getCuratorExpertComment(artId),
+          createdAt: 'Kurasi Ahli Budaya',
+        };
+      }
+      return c;
+    });
+    const hasCurator = upgraded.some(
+      (c) => c.visitorName === 'Tim Kurator Pameran Virtual',
+    );
+    if (!hasCurator) {
+      upgraded.push({
+        id: `cmt-curator-${artId}`,
+        artworkId: artId,
+        visitorName: 'Tim Kurator Pameran Virtual',
+        badge: 'Apresiasi Tinggi',
+        message: getCuratorExpertComment(artId),
+        createdAt: 'Kurasi Ahli Budaya',
+      });
+    }
+    merged[artId] = upgraded;
+  }
+  return merged;
+}
+
 function loadPersistedState(): {
   artworks: Artwork[];
   cart: CartItem[];
@@ -1189,25 +1450,17 @@ function loadPersistedState(): {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.artworks) && parsed.artworks.length > 0) {
-          const defaultImageMap = new Map<string, string | undefined>(
-            INITIAL_ARTWORKS.map((a) => [a.id, a.imageUrl]),
-          );
           return {
             artworks: parsed.artworks.map((a: Artwork) => ({
               ...a,
               level: 'SD' as EducationLevel,
               room: normalizeRoomId(a.room),
-              imageUrl:
-                typeof a.imageUrl === 'string' && a.imageUrl.trim()
-                  ? a.imageUrl
-                  : defaultImageMap.get(a.id),
+              whatsapp: DEFAULT_WHATSAPP_NUMBER,
+              imageUrl: resolveArtworkImageUrl(a.imageUrl, a),
             })),
             cart: Array.isArray(parsed.cart) ? parsed.cart : [],
             lightingTheme: parsed.lightingTheme || 'bright_daylight',
-            commentsByArtwork:
-              parsed.commentsByArtwork && typeof parsed.commentsByArtwork === 'object'
-                ? parsed.commentsByArtwork
-                : { ...INITIAL_COMMENTS },
+            commentsByArtwork: normalizePersistedComments(parsed.commentsByArtwork),
             adminPasscode:
               typeof parsed.adminPasscode === 'string' && parsed.adminPasscode.trim().length > 0
                 ? parsed.adminPasscode.trim()
@@ -1216,9 +1469,10 @@ function loadPersistedState(): {
         }
       }
 
-      // Migrate custom uploaded images or passcode from v8 while applying hyper-realistic v9 artwork photos
-      const legacyRaw = window.localStorage.getItem(LEGACY_STORAGE_KEY_V6);
-      if (legacyRaw) {
+      // Migrate custom uploaded images or passcode from earlier storage versions
+      for (const legacyKey of LEGACY_STORAGE_KEYS) {
+        const legacyRaw = window.localStorage.getItem(legacyKey);
+        if (!legacyRaw) continue;
         const legacyParsed = JSON.parse(legacyRaw);
         const legacyImageMap = new Map<string, string>();
         if (Array.isArray(legacyParsed?.artworks)) {
@@ -1241,10 +1495,7 @@ function loadPersistedState(): {
           ),
           cart: Array.isArray(legacyParsed?.cart) ? legacyParsed.cart : [],
           lightingTheme: legacyParsed?.lightingTheme || 'bright_daylight',
-          commentsByArtwork:
-            legacyParsed?.commentsByArtwork && typeof legacyParsed.commentsByArtwork === 'object'
-              ? legacyParsed.commentsByArtwork
-              : { ...INITIAL_COMMENTS },
+          commentsByArtwork: normalizePersistedComments(legacyParsed?.commentsByArtwork),
           adminPasscode:
             typeof legacyParsed?.adminPasscode === 'string' &&
             legacyParsed.adminPasscode.trim().length > 0
@@ -1464,31 +1715,75 @@ export const galleryStore = createStore<GalleryState>((set, get) => ({
     }),
 
   addArtwork: (artworkData) => {
+    const newId = 'art-' + Date.now().toString(36);
     const newArtwork: Artwork = {
       ...artworkData,
+      id: newId,
       level: 'SD',
-      id: 'art-' + Date.now().toString(36),
+      whatsapp: (artworkData.whatsapp || '').trim() || DEFAULT_WHATSAPP_NUMBER,
+      imageUrl: resolveArtworkImageUrl(artworkData.imageUrl, {
+        id: newId,
+        motifType: artworkData.motifType,
+        category: artworkData.category,
+      }),
     };
     const nextArtworks = [newArtwork, ...get().artworks];
-    set({ artworks: nextArtworks, editingArtworkId: newArtwork.id });
+    const nextComments = {
+      ...get().commentsByArtwork,
+      [newId]: [
+        {
+          id: `cmt-curator-${newId}`,
+          artworkId: newId,
+          visitorName: 'Tim Kurator Pameran Virtual',
+          badge: 'Apresiasi Tinggi' as const,
+          message: getCuratorExpertComment(newId, newArtwork),
+          createdAt: 'Kurasi Ahli Budaya',
+        },
+      ],
+    };
+    set({
+      artworks: nextArtworks,
+      commentsByArtwork: nextComments,
+      editingArtworkId: newArtwork.id,
+    });
     savePersistedState({
       artworks: nextArtworks,
       cart: get().cart,
       lightingTheme: get().lightingTheme,
-      commentsByArtwork: get().commentsByArtwork,
+      commentsByArtwork: nextComments,
       adminPasscode: get().adminPasscode,
     });
     return newArtwork;
   },
 
   updateArtwork: (id, patch) => {
-    const nextArtworks = get().artworks.map((a) =>
-      a.id === id ? { ...a, ...patch, level: 'SD' as EducationLevel } : a,
-    );
-    set({ artworks: nextArtworks });
+    const nextArtworks = get().artworks.map((a) => {
+      if (a.id !== id) return a;
+      const merged: Artwork = {
+        ...a,
+        ...patch,
+        level: 'SD' as EducationLevel,
+      };
+      if ('imageUrl' in patch) {
+        merged.imageUrl = resolveArtworkImageUrl(patch.imageUrl, merged);
+      } else {
+        merged.imageUrl = resolveArtworkImageUrl(merged.imageUrl, merged);
+      }
+      if (!merged.whatsapp || !merged.whatsapp.trim()) {
+        merged.whatsapp = DEFAULT_WHATSAPP_NUMBER;
+      }
+      return merged;
+    });
+    const updatedArt = nextArtworks.find((a) => a.id === id);
+    const nextCart = updatedArt
+      ? get().cart.map((c) =>
+          c.artwork.id === id ? { ...c, artwork: updatedArt } : c,
+        )
+      : get().cart;
+    set({ artworks: nextArtworks, cart: nextCart });
     savePersistedState({
       artworks: nextArtworks,
-      cart: get().cart,
+      cart: nextCart,
       lightingTheme: get().lightingTheme,
       commentsByArtwork: get().commentsByArtwork,
       adminPasscode: get().adminPasscode,
