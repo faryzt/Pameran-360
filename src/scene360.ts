@@ -308,6 +308,12 @@ export class Nusantara360Scene extends xb.Script {
    * after the initial room is interactive, avoiding any startup or GPU upload stutter.
    */
   private scheduleBackgroundRoomPreload() {
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection;
+    if (conn?.saveData) {
+      return;
+    }
+
     const renderer = (xb as any).core?.renderer as THREE.WebGLRenderer | undefined;
     const maxAniso = Math.min(renderer?.capabilities?.getMaxAnisotropy?.() || 4, 4);
 
@@ -334,7 +340,7 @@ export class Nusantara360Scene extends xb.Script {
           tex.anisotropy = maxAniso;
           photoTextureCache.set(url, tex);
         }
-      }, 900 + idx * 750);
+      }, 1600 + idx * 1100);
       this.preloadTimers.push(timerId);
     });
   }

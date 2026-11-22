@@ -1,8 +1,17 @@
 import * as xb from 'xrblocks';
 import { Nusantara360Scene } from './scene360.ts';
 import { UIOverlayController } from './uiOverlay.ts';
-import { AdminAndModalsController } from './adminPanel.ts';
+import type { AdminAndModalsController } from './adminPanel.ts';
 import { galleryStore, normalizeRoomId } from './store.ts';
+
+function isAtAdminRoute(): boolean {
+  const cleanPath = window.location.pathname.replace(/\/+$/, '');
+  return (
+    cleanPath === '/admin' ||
+    cleanPath.endsWith('/admin') ||
+    window.location.hash === '#/admin'
+  );
+}
 
 async function bootstrapNusantara360() {
   const uiRoot =
@@ -32,7 +41,78 @@ async function bootstrapNusantara360() {
   );
 
   overlayController = new UIOverlayController(uiRoot, sceneScript);
-  new AdminAndModalsController(adminModalsRoot, sceneScript);
+
+  // Lazy-load Admin & Settings controller (includes Firebase & export templates)
+  // so regular visitors load a much smaller, faster initial bundle.
+  let adminController: AdminAndModalsController | null = null;
+  let adminLoadPromise: Promise<AdminAndModalsController | null> | null = null;
+
+  const ensureAdminController = async (): Promise<AdminAndModalsController | null> => {
+    if (adminController) {
+      adminController.render();
+      return adminController;
+    }
+    if (!adminLoadPromise) {
+      adminLoadPromise = import('./adminPanel.ts')
+        .then(({ AdminAndModalsController: Controller }) => {
+          adminController = new Controller(adminModalsRoot, sceneScript);
+          adminController.render();
+          return adminController;
+        })
+        .catch((err) => {
+          console.error('Gagal memuat modul panel pengaturan/admin:', err);
+          adminLoadPromise = null;
+          return null;
+        });
+    }
+    return adminLoadPromise;
+  };
+
+  const needsAdminPanel = () => {
+    const s = galleryStore.getState();
+    return Boolean(
+      s.isAdminOpen ||
+        s.isAdminDashboardOpen ||
+        s.isCodeModalOpen ||
+        s.isAiStudioOpen,
+    );
+  };
+
+  if (needsAdminPanel() || isAtAdminRoute()) {
+    void ensureAdminController();
+  }
+
+  galleryStore.subscribe((state) => {
+    if (
+      !adminController &&
+      (state.isAdminOpen ||
+        state.isAdminDashboardOpen ||
+        state.isCodeModalOpen ||
+        state.isAiStudioOpen)
+    ) {
+      void ensureAdminController();
+    }
+  });
+
+  const handleRouteCheck = () => {
+    if (isAtAdminRoute()) {
+      galleryStore.getState().setAdminDashboardOpen(true);
+      void ensureAdminController();
+    }
+  };
+  window.addEventListener('popstate', handleRouteCheck);
+  window.addEventListener('hashchange', handleRouteCheck);
+  window.addEventListener('keydown', (e) => {
+    if (
+      !adminController &&
+      ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) ||
+        (e.altKey && (e.key === 'a' || e.key === 'A')))
+    ) {
+      e.preventDefault();
+      galleryStore.getState().setAdminDashboardOpen(true);
+      void ensureAdminController();
+    }
+  });
 
   // Support ?room=ruang_1..ruang_5 query parameters for direct inspection
   const params = new URLSearchParams(window.location.search);

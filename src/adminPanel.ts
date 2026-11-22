@@ -144,9 +144,10 @@ export class AdminAndModalsController {
 
     // Listen to browser navigation (pathname or hash) and discreet admin shortcut (Ctrl+Shift+A / Alt+A) for /admin route
     const syncAdminRoute = () => {
+      const cleanPath = window.location.pathname.replace(/\/+$/, '');
       const isAtAdmin =
-        window.location.pathname === '/admin' ||
-        window.location.pathname.startsWith('/admin/') ||
+        cleanPath === '/admin' ||
+        cleanPath.endsWith('/admin') ||
         window.location.hash === '#/admin';
       const st = galleryStore.getState();
       if (st.isAdminDashboardOpen !== isAtAdmin) {
@@ -2024,6 +2025,15 @@ export class AdminAndModalsController {
     if (!idToken && !this.authUserEmail) {
       this.driveStatusMsg =
         'Silakan masuk dengan akun Google terlebih dahulu untuk menyinkronkan ke Cloud SQL.';
+      this.render();
+      return;
+    }
+    const isStaticHost =
+      window.location.hostname.endsWith('.github.io') ||
+      window.location.protocol === 'file:';
+    if (isStaticHost) {
+      this.driveStatusMsg =
+        'Mode hosting statis (GitHub Pages): semua perubahan karya tersimpan aman di penyimpanan lokal browser.';
       this.render();
       return;
     }

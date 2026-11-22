@@ -2336,19 +2336,24 @@ export class UIOverlayController {
         (c) => `${c.artwork.title} (${c.quantity}x)`,
       );
 
-      try {
-        await fetch('/api/orders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            buyerName: this.checkoutName,
-            buyerWhatsapp: this.checkoutWhatsApp,
-            itemsJson: JSON.stringify(st.cart),
-            totalPrice,
-          }),
-        });
-      } catch {
-        // Fallback smoothly if offline
+      const isStaticHost =
+        window.location.hostname.endsWith('.github.io') ||
+        window.location.protocol === 'file:';
+      if (!isStaticHost) {
+        try {
+          await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              buyerName: this.checkoutName,
+              buyerWhatsapp: this.checkoutWhatsApp,
+              itemsJson: JSON.stringify(st.cart),
+              totalPrice,
+            }),
+          });
+        } catch {
+          // Fallback smoothly if offline
+        }
       }
 
       this.checkoutStatusMsg = `Terima kasih ${this.checkoutName}! Pesanan apresiasi (${itemsSummary.join(', ')}) sebesar ${formatIDR(totalPrice)} telah tercatat.`;
