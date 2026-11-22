@@ -87,6 +87,18 @@ export class Nusantara360Scene extends xb.Script {
   private currentFov = 70;
   private targetFov = 70;
 
+  // Multi-touch pinch-to-zoom state for mobile & tablet devices
+  private activeTouchPoints = new Map<number, { x: number; y: number }>();
+  private lastPinchDistance = 0;
+
+  // Loading state callback for smooth fade-in / fade-out loading screen
+  public onLoadingStateChange?: (
+    isLoading: boolean,
+    progress: number,
+    roomName: string,
+    roomSubtitle: string,
+  ) => void;
+
   // Smooth cubic ease-in-out focus transition when moving focus between artworks
   private focusTransition: {
     startYaw: number;
@@ -152,9 +164,31 @@ export class Nusantara360Scene extends xb.Script {
   ) {
     super();
     this.onPinPositionsUpdated = onPinPositionsUpdated;
+    const initialFov = this.getResponsiveBaseFov();
+    this.currentFov = initialFov;
+    this.targetFov = initialFov;
+  }
+
+  /**
+   * Smart auto-scaling FOV across Mobile Portrait, Tablet, and Desktop PC
+   * so portrait screens never feel cramped or over-zoomed.
+   */
+  public getResponsiveBaseFov(): number {
+    if (typeof window === 'undefined') return 70;
+    const w = Math.max(window.innerWidth || 1024, 1);
+    const h = Math.max(window.innerHeight || 768, 1);
+    const aspect = w / h;
+    if (aspect < 0.68) return 82; // Smartphone portrait
+    if (aspect < 0.98) return 75; // Tablet portrait / foldable
+    if (aspect > 2.0) return 66;  // Ultrawide desktop
+    return 70;                    // Standard desktop & landscape tablet
   }
 
   init() {
+    const baseFov = this.getResponsiveBaseFov();
+    this.currentFov = baseFov;
+    this.targetFov = baseFov;
+
     this.setupRendererAndPostProcessing();
     this.setupLighting();
     this.setupPanoramaSphere();
@@ -309,23 +343,53 @@ export class Nusantara360Scene extends xb.Script {
     const roomSpec = ROOMS[room] || ROOMS.ruang_1;
     const url = roomSpec.panoramaUrl;
     const cached = photoTextureCache.get(url);
-    if (cached) return cached;
+    if (cached) {
+      if ((cached as any).image && !galleryStore.getState().transitioningRoom) {
+        this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+      }
+      return cached;
+    }
 
     try {
+      this.onLoadingStateChange?.(true, 28, roomSpec.name, roomSpec.subtitle);
       const renderer = (xb as any).core?.renderer as THREE.WebGLRenderer | undefined;
       const maxAniso = Math.min(renderer?.capabilities?.getMaxAnisotropy?.() || 4, 4);
-      const tex = textureLoader.load(url, (loaded) => {
-        loaded.colorSpace = THREE.SRGBColorSpace;
-        loaded.minFilter = THREE.LinearFilter;
-        loaded.magFilter = THREE.LinearFilter;
-        loaded.generateMipmaps = false;
-        loaded.anisotropy = maxAniso;
-        loaded.needsUpdate = true;
-        if (this.sphereMesh && this.currentRoomRendered === room) {
-          this.sphereMesh.material.map = loaded;
-          this.sphereMesh.material.needsUpdate = true;
-        }
-      });
+      const tex = textureLoader.load(
+        url,
+        (loaded) => {
+          loaded.colorSpace = THREE.SRGBColorSpace;
+          loaded.minFilter = THREE.LinearFilter;
+          loaded.magFilter = THREE.LinearFilter;
+          loaded.generateMipmaps = false;
+          loaded.anisotropy = maxAniso;
+          loaded.needsUpdate = true;
+          if (this.sphereMesh && this.currentRoomRendered === room) {
+            this.sphereMesh.material.map = loaded;
+            this.sphereMesh.material.needsUpdate = true;
+          }
+          this.pinsDirty = true;
+          this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+        },
+        (progressEvt) => {
+          if (progressEvt.lengthComputable && progressEvt.total > 0) {
+            const pct = Math.min(
+              92,
+              Math.max(32, Math.round((progressEvt.loaded / progressEvt.total) * 90)),
+            );
+            this.onLoadingStateChange?.(true, pct, roomSpec.name, roomSpec.subtitle);
+          }
+        },
+        () => {
+          const fallbackTex = createSeamlessPanoramaTexture('foyer', themeId);
+          photoTextureCache.set(url, fallbackTex);
+          if (this.sphereMesh && this.currentRoomRendered === room) {
+            this.sphereMesh.material.map = fallbackTex;
+            this.sphereMesh.material.needsUpdate = true;
+          }
+          this.pinsDirty = true;
+          this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+        },
+      );
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
@@ -334,7 +398,9 @@ export class Nusantara360Scene extends xb.Script {
       photoTextureCache.set(url, tex);
       return tex;
     } catch {
-      return createSeamlessPanoramaTexture('foyer', themeId);
+      const fallback = createSeamlessPanoramaTexture('foyer', themeId);
+      this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+      return fallback;
     }
   }
 
@@ -406,9 +472,20 @@ export class Nusantara360Scene extends xb.Script {
       }
 
       this.resizeListener = () => {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.15));
+        const w = Math.max(window.innerWidth, 1);
+        const h = Math.max(window.innerHeight, 1);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+        if (!renderer.xr?.isPresenting) {
+          renderer.setSize(w, h, false);
+        }
+        const activeCam = (xb as any).core?.camera as THREE.PerspectiveCamera | undefined;
+        if (activeCam && !renderer.xr?.isPresenting) {
+          activeCam.aspect = w / h;
+          activeCam.updateProjectionMatrix();
+        }
+        if (!this.focusTransition && !galleryStore.getState().transitioningRoom) {
+          this.targetFov = this.getResponsiveBaseFov();
+        }
         this.composer?.setSize(w, h);
         this.bloomPass?.resolution.set(
           Math.max(1, Math.floor(w * 0.25)),
@@ -417,6 +494,8 @@ export class Nusantara360Scene extends xb.Script {
         this.pinsDirty = true;
       };
       window.addEventListener('resize', this.resizeListener);
+      window.addEventListener('orientationchange', this.resizeListener);
+      window.visualViewport?.addEventListener('resize', this.resizeListener);
     }
   }
 
@@ -691,6 +770,8 @@ export class Nusantara360Scene extends xb.Script {
 
     this.focusTransition = null;
     state.setTransitioningRoom(true);
+    const nextRoomSpec = ROOMS[targetRoom] || ROOMS.ruang_1;
+    this.onLoadingStateChange?.(true, 45, nextRoomSpec.name, nextRoomSpec.subtitle);
 
     // If clicked from a directional portal, smoothly turn toward that portal along shortest angle while zooming in
     if (typeof portalYaw === 'number') {
@@ -701,17 +782,17 @@ export class Nusantara360Scene extends xb.Script {
 
     window.setTimeout(() => {
       galleryStore.getState().setRoom(targetRoom);
-      const nextRoomSpec = ROOMS[targetRoom] || ROOMS.ruang_1;
       const nextYaw =
         typeof entryYaw === 'number' ? entryYaw : nextRoomSpec.defaultYawDeg;
       this.cameraYawDeg = nextYaw;
       this.targetYawDeg = nextYaw;
       this.cameraPitchDeg = 0;
       this.targetPitchDeg = 0;
-      this.targetFov = 70;
+      this.targetFov = this.getResponsiveBaseFov();
 
       window.setTimeout(() => {
         galleryStore.getState().setTransitioningRoom(false);
+        this.onLoadingStateChange?.(false, 100, nextRoomSpec.name, nextRoomSpec.subtitle);
       }, 240);
     }, 220);
   }
@@ -743,12 +824,13 @@ export class Nusantara360Scene extends xb.Script {
       options?.durationMs ??
       THREE.MathUtils.clamp(380 + angularDistance * 2.1, 420, 760);
 
-    // Subtle cinematic FOV dolly arc: widens slightly mid-flight for spatial awareness, settles at 65°
-    const midFov = angularDistance > 35 ? 74 : 69;
+    const baseFov = this.getResponsiveBaseFov();
+    const settleFov = Math.max(62, baseFov - 4);
+    const midFov = angularDistance > 35 ? Math.min(86, baseFov + 4) : baseFov - 1;
 
     this.targetYawDeg = endYaw;
     this.targetPitchDeg = endPitch;
-    this.targetFov = 66;
+    this.targetFov = settleFov;
 
     const transitionObj = {
       startYaw: this.cameraYawDeg,
@@ -757,7 +839,7 @@ export class Nusantara360Scene extends xb.Script {
       endPitch,
       startFov: this.currentFov,
       midFov,
-      endFov: 66,
+      endFov: settleFov,
       startTime: performance.now(),
       durationMs,
       onComplete: options?.onComplete,
@@ -793,6 +875,7 @@ export class Nusantara360Scene extends xb.Script {
     );
     const endYaw = this.cameraYawDeg + deltaYaw;
     const endPitch = THREE.MathUtils.clamp(roomSpec.repositoryPitchDeg, -35, 35);
+    const baseFov = this.getResponsiveBaseFov();
     this.targetYawDeg = endYaw;
     this.targetPitchDeg = endPitch;
     this.focusTransition = {
@@ -801,8 +884,8 @@ export class Nusantara360Scene extends xb.Script {
       startPitch: this.cameraPitchDeg,
       endPitch,
       startFov: this.currentFov,
-      midFov: 72,
-      endFov: 68,
+      midFov: Math.min(86, baseFov + 2),
+      endFov: Math.max(64, baseFov - 2),
       startTime: performance.now(),
       durationMs: 520,
     };
@@ -826,6 +909,7 @@ export class Nusantara360Scene extends xb.Script {
 
   public resetCameraView() {
     const roomSpec = ROOMS[galleryStore.getState().currentRoom] || ROOMS.ruang_1;
+    const baseFov = this.getResponsiveBaseFov();
     this.velocityYaw = 0;
     this.velocityPitch = 0;
     const endYaw =
@@ -833,15 +917,15 @@ export class Nusantara360Scene extends xb.Script {
       shortestAngleDeltaDeg(this.cameraYawDeg, roomSpec.defaultYawDeg);
     this.targetYawDeg = endYaw;
     this.targetPitchDeg = 0;
-    this.targetFov = 70;
+    this.targetFov = baseFov;
     this.focusTransition = {
       startYaw: this.cameraYawDeg,
       endYaw,
       startPitch: this.cameraPitchDeg,
       endPitch: 0,
       startFov: this.currentFov,
-      midFov: 72,
-      endFov: 70,
+      midFov: Math.min(86, baseFov + 2),
+      endFov: baseFov,
       startTime: performance.now(),
       durationMs: 480,
     };
@@ -871,6 +955,18 @@ export class Nusantara360Scene extends xb.Script {
       ) {
         return;
       }
+
+      if (e.pointerType === 'touch') {
+        this.activeTouchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this.activeTouchPoints.size === 2) {
+          const pts = Array.from(this.activeTouchPoints.values());
+          this.lastPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          this.isDragging = false;
+          this.activePointerId = null;
+          return;
+        }
+      }
+
       this.isDragging = true;
       this.activePointerId = e.pointerId;
       this.dragTotalDist = 0;
@@ -883,6 +979,25 @@ export class Nusantara360Scene extends xb.Script {
     });
 
     window.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'touch' && this.activeTouchPoints.has(e.pointerId)) {
+        this.activeTouchPoints.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (this.activeTouchPoints.size === 2 && !this.isAnyModalOpen()) {
+          const pts = Array.from(this.activeTouchPoints.values());
+          const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+          if (this.lastPinchDistance > 0) {
+            const deltaDist = this.lastPinchDistance - dist;
+            this.targetFov = THREE.MathUtils.clamp(
+              this.targetFov + deltaDist * 0.14,
+              38,
+              90,
+            );
+            this.pinsDirty = true;
+          }
+          this.lastPinchDistance = dist;
+          return;
+        }
+      }
+
       if (!this.isDragging) return;
       if (this.activePointerId !== null && e.pointerId !== this.activePointerId) {
         return;
@@ -931,6 +1046,12 @@ export class Nusantara360Scene extends xb.Script {
     });
 
     const endDrag = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') {
+        this.activeTouchPoints.delete(e.pointerId);
+        if (this.activeTouchPoints.size < 2) {
+          this.lastPinchDistance = 0;
+        }
+      }
       if (!this.isDragging) return;
       if (this.activePointerId !== null && e.pointerId !== this.activePointerId) {
         return;
@@ -971,7 +1092,7 @@ export class Nusantara360Scene extends xb.Script {
         this.targetFov = THREE.MathUtils.clamp(
           this.targetFov + e.deltaY * 0.035,
           38,
-          85,
+          90,
         );
       },
       { passive: true },

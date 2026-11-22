@@ -35,7 +35,7 @@ export class UIOverlayController {
   private sceneScript: Nusantara360Scene;
   private audioManager: BackgroundAudioManager;
 
-  // Dedicated DOM sub-containers for the 4-Corner Transparent HUD + Street-View Pins
+  // Dedicated DOM sub-containers for the 4-Corner Transparent HUD + Street-View Pins + Loading Screen
   private pinsLayer!: HTMLElement;
   private topLeftLayer!: HTMLElement;
   private topRightLayer!: HTMLElement;
@@ -43,6 +43,15 @@ export class UIOverlayController {
   private bottomRightInfoLayer!: HTMLElement;
   private modalLayer!: HTMLElement;
   private toastLayer!: HTMLElement;
+  private loadingLayer!: HTMLElement;
+
+  // Fade-In / Fade-Out Exhibition Loading Screen State
+  private isLoadingVisible = true;
+  private loadingProgress = 24;
+  private loadingTitle = 'Memuat Data Pameran 360°...';
+  private loadingSubtitle = 'Menyiapkan ruang galeri interaktif & koleksi karya pelajar Nusantara';
+  private loadingFadeOutTimer?: number;
+  private loadingProgressTimer?: number;
 
   private pinElements = new Map<string, HTMLButtonElement>();
   private hotspotElements = new Map<RoomId, HTMLButtonElement>();
@@ -80,6 +89,12 @@ export class UIOverlayController {
     this.root = root;
     this.sceneScript = sceneScript;
     const initState = galleryStore.getState();
+
+    // Auto-collapse Denah HUD on narrow portrait smartphones so the 360° canvas & pins stay uncluttered
+    if (typeof window !== 'undefined' && window.innerWidth < 640 && !initState.hudCollapsed) {
+      initState.setHudCollapsed(true);
+    }
+
     this.audioManager = new BackgroundAudioManager(
       initState.currentRoom,
       initState.audioMuted,
@@ -88,10 +103,26 @@ export class UIOverlayController {
     );
     this.initDOMStructure();
     this.renderAll();
+    this.setupInitialAndSceneLoadingHooks();
+
+    window.addEventListener('resize', () => {
+      this.renderBottomRightInfo();
+    });
 
     galleryStore.subscribe((state, prevState) => {
       if (state.currentRoom !== prevState.currentRoom) {
         this.audioManager.setRoom(state.currentRoom);
+      }
+      if (state.transitioningRoom !== prevState.transitioningRoom) {
+        const roomSpec = ROOMS[state.currentRoom] || ROOMS.ruang_1;
+        if (!state.transitioningRoom) {
+          this.setLoadingScreenState(
+            false,
+            100,
+            roomSpec.name,
+            roomSpec.subtitle,
+          );
+        }
       }
       if (state.audioMuted !== prevState.audioMuted) {
         this.audioManager.setMuted(state.audioMuted);
@@ -162,27 +193,25 @@ export class UIOverlayController {
     this.pinsLayer.id = 'layer-3d-pins';
     this.pinsLayer.className = 'fixed inset-0 pointer-events-none z-[125]';
 
-    // 2. Pojok Kiri Atas (Clean Brand Button)
+    // 2. Pojok Kiri Atas (Kosong — judul atas "Pameran Virtual" dihapus sesuai permintaan)
     this.topLeftLayer = document.createElement('div');
     this.topLeftLayer.id = 'corner-top-left';
-    this.topLeftLayer.setAttribute('data-ui-interactive', 'true');
-    this.topLeftLayer.className =
-      'fixed top-3.5 left-3.5 z-[150] pointer-events-auto flex items-center gap-2';
+    this.topLeftLayer.className = 'hidden';
 
-    // 3. Pojok Kanan Atas (Icon-Only Controls: Galeri, Suara & Volume, Keranjang, Pengaturan)
+    // 3. Pojok Kanan Atas (Icon-Only Controls: Galeri, Suara & Volume, Keranjang, STARLA BUDAYA v.0.2.3)
     this.topRightLayer = document.createElement('nav');
     this.topRightLayer.id = 'corner-top-right';
     this.topRightLayer.setAttribute('aria-label', 'Aksi Pojok Kanan Atas');
     this.topRightLayer.setAttribute('data-ui-interactive', 'true');
     this.topRightLayer.className =
-      'fixed top-3.5 right-3.5 z-[150] pointer-events-auto flex items-center justify-end gap-2';
+      'fixed top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-[150] pointer-events-auto flex items-center justify-end gap-1.5 sm:gap-2';
 
-    // 4. Pojok Kiri Bawah (Bottom-Left: Mobile Legends Analog Navigation)
+    // 4. Pojok Kiri Bawah (Bottom-Left: Clean & Professional 360° Analog Navigation)
     this.bottomLeftAnalogLayer = document.createElement('div');
     this.bottomLeftAnalogLayer.id = 'corner-bottom-left';
     this.bottomLeftAnalogLayer.setAttribute('data-ui-interactive', 'true');
     this.bottomLeftAnalogLayer.className =
-      'fixed bottom-3.5 left-3.5 z-[150] pointer-events-auto flex items-end gap-2.5';
+      'fixed bottom-2.5 left-2.5 sm:bottom-3.5 sm:left-3.5 z-[150] pointer-events-auto flex items-end gap-2';
 
     // 5. Pojok Kanan Bawah (Bottom-Right: Icon-Only Denah Button & Popover with R1-R5)
     this.bottomRightInfoLayer = document.createElement('aside');
@@ -190,7 +219,7 @@ export class UIOverlayController {
     this.bottomRightInfoLayer.setAttribute('aria-label', 'Denah Ruangan & Navigasi R1-R5');
     this.bottomRightInfoLayer.setAttribute('data-ui-interactive', 'true');
     this.bottomRightInfoLayer.className =
-      'fixed bottom-3.5 right-3.5 z-[150] pointer-events-auto';
+      'fixed bottom-2.5 right-2.5 sm:bottom-3.5 sm:right-3.5 z-[150] pointer-events-auto';
 
     // 6. Artwork Detail, Galeri & Shopping Cart Modal Layer
     this.modalLayer = document.createElement('div');
@@ -201,7 +230,16 @@ export class UIOverlayController {
     this.toastLayer = document.createElement('div');
     this.toastLayer.id = 'layer-toast';
     this.toastLayer.className =
-      'fixed top-16 right-4 z-[350] pointer-events-none transition-opacity duration-200';
+      'fixed top-14 sm:top-16 right-3 sm:right-4 z-[350] pointer-events-none transition-opacity duration-200 max-w-[calc(100vw-24px)]';
+
+    // 8. Smooth Fade-In / Fade-Out Exhibition Loading Screen Layer
+    this.loadingLayer = document.createElement('div');
+    this.loadingLayer.id = 'exhibition-loading-screen';
+    this.loadingLayer.setAttribute('role', 'status');
+    this.loadingLayer.setAttribute('aria-live', 'polite');
+    this.loadingLayer.setAttribute('aria-label', 'Memuat Data Pameran');
+    this.loadingLayer.className =
+      'exhibition-loader-overlay is-visible fixed inset-0 z-[380] flex items-center justify-center bg-stone-950/90 backdrop-blur-xl p-4';
 
     this.root.append(
       this.pinsLayer,
@@ -211,6 +249,7 @@ export class UIOverlayController {
       this.bottomRightInfoLayer,
       this.modalLayer,
       this.toastLayer,
+      this.loadingLayer,
     );
 
     window.addEventListener('keydown', (e) => {
@@ -234,6 +273,151 @@ export class UIOverlayController {
     this.syncPinButtonsPool();
   }
 
+  private renderLoadingScreen() {
+    if (!this.loadingLayer) return;
+    const state = galleryStore.getState();
+    const activeRoom = ROOMS[state.currentRoom] || ROOMS.ruang_1;
+    const totalArtworks = state.artworks.length;
+
+    this.loadingLayer.innerHTML = `
+      <div class="exhibition-loader-card w-full max-w-xs sm:max-w-sm rounded-3xl bg-stone-900/90 border border-white/15 px-6 py-7 shadow-[0_24px_64px_rgba(0,0,0,0.75)] flex flex-col items-center text-center space-y-4">
+        <!-- Dual Orbital 360° Spinner -->
+        <div class="relative w-14 h-14 flex items-center justify-center">
+          <div class="loader-ring-outer absolute inset-0 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-emerald-400/70"></div>
+          <div class="loader-ring-inner absolute inset-2 rounded-full border border-dashed border-white/25 border-b-emerald-300"></div>
+          <div class="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.95)]"></div>
+        </div>
+
+        <div class="space-y-1 max-w-full">
+          <div id="loading-screen-title" class="text-sm sm:text-base font-bold text-white tracking-tight truncate">
+            ${this.escapeHtml(this.loadingTitle)}
+          </div>
+          <p id="loading-screen-subtitle" class="text-[11px] sm:text-xs text-stone-400 leading-relaxed line-clamp-2">
+            ${this.escapeHtml(this.loadingSubtitle)}
+          </p>
+        </div>
+
+        <!-- Smooth Progress Bar -->
+        <div class="w-full space-y-1.5 pt-1">
+          <div class="w-full h-1.5 rounded-full bg-stone-800 overflow-hidden border border-white/10">
+            <div
+              id="loading-screen-progress-bar"
+              style="width: ${Math.min(100, Math.max(8, this.loadingProgress))}%"
+              class="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 transition-all duration-300 ease-out"
+            ></div>
+          </div>
+          <div class="flex items-center justify-between text-[10px] font-mono text-stone-400">
+            <span id="loading-screen-room-badge" class="text-amber-300/90 font-semibold">${this.escapeHtml(activeRoom.code)} · ${totalArtworks} Karya</span>
+            <span id="loading-screen-percent" class="tabular-nums text-emerald-300 font-bold">${Math.round(this.loadingProgress)}%</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  public setLoadingScreenState(
+    visible: boolean,
+    progress?: number,
+    title?: string,
+    subtitle?: string,
+  ) {
+    if (!this.loadingLayer) return;
+    if (typeof progress === 'number') {
+      this.loadingProgress = Math.min(100, Math.max(0, progress));
+    }
+    if (title) this.loadingTitle = title;
+    if (subtitle) this.loadingSubtitle = subtitle;
+
+    const titleEl = this.loadingLayer.querySelector('#loading-screen-title');
+    const subEl = this.loadingLayer.querySelector('#loading-screen-subtitle');
+    const barEl = this.loadingLayer.querySelector(
+      '#loading-screen-progress-bar',
+    ) as HTMLElement | null;
+    const pctEl = this.loadingLayer.querySelector('#loading-screen-percent');
+    const roomBadgeEl = this.loadingLayer.querySelector('#loading-screen-room-badge');
+
+    const st = galleryStore.getState();
+    const room = ROOMS[st.currentRoom] || ROOMS.ruang_1;
+
+    if (titleEl) titleEl.textContent = this.loadingTitle;
+    if (subEl) subEl.textContent = this.loadingSubtitle;
+    if (barEl) barEl.style.width = `${Math.min(100, Math.max(8, this.loadingProgress))}%`;
+    if (pctEl) pctEl.textContent = `${Math.round(this.loadingProgress)}%`;
+    if (roomBadgeEl) roomBadgeEl.textContent = `${room.code} · ${st.artworks.length} Karya`;
+
+    if (visible) {
+      if (this.loadingFadeOutTimer) {
+        window.clearTimeout(this.loadingFadeOutTimer);
+        this.loadingFadeOutTimer = undefined;
+      }
+      this.isLoadingVisible = true;
+      this.loadingLayer.classList.remove('is-hidden');
+      this.loadingLayer.classList.add('is-visible');
+      this.loadingLayer.setAttribute('aria-hidden', 'false');
+    } else {
+      this.loadingProgress = 100;
+      if (barEl) barEl.style.width = '100%';
+      if (pctEl) pctEl.textContent = '100%';
+      if (this.loadingFadeOutTimer) {
+        window.clearTimeout(this.loadingFadeOutTimer);
+      }
+      this.loadingFadeOutTimer = window.setTimeout(() => {
+        this.isLoadingVisible = false;
+        this.loadingLayer.classList.remove('is-visible');
+        this.loadingLayer.classList.add('is-hidden');
+        this.loadingLayer.setAttribute('aria-hidden', 'true');
+      }, 160);
+    }
+  }
+
+  private setupInitialAndSceneLoadingHooks() {
+    const st = galleryStore.getState();
+    const initialRoom = ROOMS[st.currentRoom] || ROOMS.ruang_1;
+    this.setLoadingScreenState(
+      true,
+      32,
+      `Memuat ${initialRoom.name}...`,
+      initialRoom.subtitle,
+    );
+
+    // Smooth incremental progress while 360° texture & exhibition data initialize
+    this.loadingProgressTimer = window.setInterval(() => {
+      if (!this.isLoadingVisible) return;
+      if (this.loadingProgress < 86) {
+        this.setLoadingScreenState(true, this.loadingProgress + 14);
+      }
+    }, 140);
+
+    this.sceneScript.onLoadingStateChange = (isLoading, progress, roomName, roomSubtitle) => {
+      if (isLoading) {
+        this.setLoadingScreenState(
+          true,
+          Math.max(this.loadingProgress, progress),
+          `Memuat ${roomName}...`,
+          roomSubtitle,
+        );
+      } else {
+        if (this.loadingProgressTimer) {
+          window.clearInterval(this.loadingProgressTimer);
+          this.loadingProgressTimer = undefined;
+        }
+        this.setLoadingScreenState(false, 100, roomName, roomSubtitle);
+      }
+    };
+
+    // Safety fallback so initial loading screen always fades out smoothly within 900ms even if texture is cached
+    window.setTimeout(() => {
+      if (this.loadingProgressTimer) {
+        window.clearInterval(this.loadingProgressTimer);
+        this.loadingProgressTimer = undefined;
+      }
+      if (!galleryStore.getState().transitioningRoom) {
+        const room = ROOMS[galleryStore.getState().currentRoom] || ROOMS.ruang_1;
+        this.setLoadingScreenState(false, 100, room.name, room.subtitle);
+      }
+    }, 680);
+  }
+
   public showToast(msg: string) {
     this.toastMessage = msg;
     if (this.toastTimer) {
@@ -250,6 +434,7 @@ export class UIOverlayController {
   }
 
   private renderAll() {
+    this.renderLoadingScreen();
     this.renderTopLeftCorner();
     this.renderTopRightCorner();
     this.renderBottomLeftAnalog();
@@ -434,16 +619,24 @@ export class UIOverlayController {
 
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const brWidth = state.hudCollapsed ? 70 : 300;
-    const brHeight = state.hudCollapsed ? 70 : 310;
+    const isMobile = w < 640;
+    const isTablet = w >= 640 && w < 1024;
+    const pinScale = w < 380 ? 0.82 : isMobile ? 0.88 : isTablet ? 0.94 : 1.0;
+
+    const analogSafeW = isMobile ? 116 : 155;
+    const analogSafeH = isMobile ? 116 : 160;
+    const brWidth = state.hudCollapsed ? (isMobile ? 54 : 68) : (isMobile ? 240 : 300);
+    const brHeight = state.hudCollapsed ? (isMobile ? 54 : 68) : (isMobile ? 268 : 310);
+    const topRightSafeW = isMobile ? 185 : 225;
+    const topRightSafeH = isMobile ? 54 : 64;
 
     for (const pin of artworkPins) {
       const el = this.pinElements.get(pin.id);
       if (!el) continue;
 
-      const inBottomLeftAnalog = pin.x < 175 && pin.y > h - 185;
+      const inBottomLeftAnalog = pin.x < analogSafeW && pin.y > h - analogSafeH;
       const inBottomRightInfo = pin.x > w - brWidth && pin.y > h - brHeight;
-      const inTopCorners = pin.y < 64 && (pin.x < 220 || pin.x > w - 310);
+      const inTopCorners = pin.y < topRightSafeH && pin.x > w - topRightSafeW;
 
       if (
         !pin.visible ||
@@ -459,7 +652,7 @@ export class UIOverlayController {
         if (el.style.display !== 'flex') {
           el.style.display = 'flex';
         }
-        el.style.transform = `translate3d(${Math.round(pin.x)}px, ${Math.round(pin.y)}px, 0) translate(-50%, -50%)`;
+        el.style.transform = `translate3d(${Math.round(pin.x)}px, ${Math.round(pin.y)}px, 0) translate(-50%, -50%) scale(${pinScale})`;
       }
     }
 
@@ -469,9 +662,9 @@ export class UIOverlayController {
       if (!rp) {
         this.repositoryPinBtn.style.display = 'none';
       } else {
-        const inBottomLeftAnalog = rp.x < 175 && rp.y > h - 185;
+        const inBottomLeftAnalog = rp.x < analogSafeW && rp.y > h - analogSafeH;
         const inBottomRightInfo = rp.x > w - brWidth && rp.y > h - brHeight;
-        const inTopCorners = rp.y < 64 && (rp.x < 220 || rp.x > w - 310);
+        const inTopCorners = rp.y < topRightSafeH && rp.x > w - topRightSafeW;
         if (
           !rp.visible ||
           anyModalOpen ||
@@ -486,7 +679,7 @@ export class UIOverlayController {
           if (this.repositoryPinBtn.style.display !== 'flex') {
             this.repositoryPinBtn.style.display = 'flex';
           }
-          this.repositoryPinBtn.style.transform = `translate3d(${Math.round(rp.x)}px, ${Math.round(rp.y)}px, 0) translate(-50%, -50%)`;
+          this.repositoryPinBtn.style.transform = `translate3d(${Math.round(rp.x)}px, ${Math.round(rp.y)}px, 0) translate(-50%, -50%) scale(${pinScale})`;
         }
       }
     }
@@ -498,9 +691,10 @@ export class UIOverlayController {
       const hsBtn = this.hotspotElements.get(hp.targetRoom);
       if (!hsBtn) continue;
 
-      const inBottomLeftHud = hp.x < 215 && hp.y > h - 205;
-      const inBottomRightHud = hp.x > w - (brWidth + 45) && hp.y > h - (brHeight + 25);
-      const outOfBounds = hp.x < 60 || hp.x > w - 60 || hp.y < 75 || hp.y > h - 35;
+      const inBottomLeftHud = hp.x < analogSafeW + 30 && hp.y > h - (analogSafeH + 25);
+      const inBottomRightHud = hp.x > w - (brWidth + 35) && hp.y > h - (brHeight + 20);
+      const marginX = isMobile ? 38 : 60;
+      const outOfBounds = hp.x < marginX || hp.x > w - marginX || hp.y < 60 || hp.y > h - 30;
 
       if (!hp.visible || anyModalOpen || inBottomLeftHud || inBottomRightHud || outOfBounds) {
         if (hsBtn.style.display !== 'none') {
@@ -510,7 +704,7 @@ export class UIOverlayController {
         if (hsBtn.style.display !== 'flex') {
           hsBtn.style.display = 'flex';
         }
-        hsBtn.style.transform = `translate3d(${Math.round(hp.x)}px, ${Math.round(hp.y - 24)}px, 0) translate(-50%, -50%)`;
+        hsBtn.style.transform = `translate3d(${Math.round(hp.x)}px, ${Math.round(hp.y - 24)}px, 0) translate(-50%, -50%) scale(${pinScale})`;
       }
     }
 
@@ -521,29 +715,10 @@ export class UIOverlayController {
     }
   }
 
-  // ─── 2. POJOK KIRI ATAS (CLEAN BRAND BUTTON: PAMERAN VIRTUAL) ─────────────
+  // ─── 2. POJOK KIRI ATAS (KOSONG — JUDUL ATAS "PAMERAN VIRTUAL" DIHAPUS) ────
   private renderTopLeftCorner() {
-    const state = galleryStore.getState();
-    const activeRoom = ROOMS[state.currentRoom] || ROOMS.ruang_1;
-
-    this.topLeftLayer.innerHTML = `
-      <button
-        type="button"
-        id="nav-brand-reset"
-        title="Reset Pandangan Kamera 360° (${this.escapeAttr(activeRoom.name)})"
-        class="px-3.5 py-2 rounded-2xl bg-black/45 hover:bg-black/70 backdrop-blur-md border border-white/25 hover:border-amber-300/75 text-white text-xs font-bold tracking-tight transition-all shadow-lg flex items-center gap-2 cursor-pointer"
-      >
-        <span class="text-amber-400">✦</span>
-        <span>PAMERAN VIRTUAL</span>
-      </button>
-    `;
-
-    this.topLeftLayer
-      .querySelector('#nav-brand-reset')
-      ?.addEventListener('click', () => {
-        this.audioManager.playInteractionChime('focus');
-        this.sceneScript.resetCameraView();
-      });
+    this.topLeftLayer.innerHTML = '';
+    this.topLeftLayer.className = 'hidden';
   }
 
   private getVolumeIconSvg(isMuted: boolean, volume: number): string {
@@ -584,7 +759,7 @@ export class UIOverlayController {
       muteBtn.textContent = isMuted || volume === 0 ? 'Aktifkan' : 'Bisukan';
     }
     if (btn) {
-      btn.className = `relative group w-10 h-10 rounded-2xl backdrop-blur-md border flex items-center justify-center transition-all shadow-lg cursor-pointer ${
+      btn.className = `relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl backdrop-blur-md border flex items-center justify-center transition-all shadow-lg cursor-pointer ${
         isMuted || volume === 0
           ? 'bg-black/45 hover:bg-black/70 border-white/25 text-white/75'
           : 'bg-emerald-500/25 hover:bg-emerald-500/40 border-emerald-300/75 text-emerald-200'
@@ -609,7 +784,7 @@ export class UIOverlayController {
         id="btn-open-repository"
         aria-label="Galeri"
         title="Galeri"
-        class="relative group w-10 h-10 rounded-2xl bg-black/45 hover:bg-amber-500/35 backdrop-blur-md border border-white/25 hover:border-amber-300/80 text-amber-200 flex items-center justify-center transition-all shadow-lg cursor-pointer"
+        class="relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-black/45 hover:bg-amber-500/35 backdrop-blur-md border border-white/25 hover:border-amber-300/80 text-amber-200 flex items-center justify-center transition-all shadow-lg cursor-pointer"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -630,7 +805,7 @@ export class UIOverlayController {
           aria-label="Pengatur Volume Suara"
           aria-expanded="${this.isVolumePopoverOpen ? 'true' : 'false'}"
           title="${this.escapeAttr(`${volumeHoverLabel} — ${audioProfile.title}`)}"
-          class="relative group w-10 h-10 rounded-2xl backdrop-blur-md border flex items-center justify-center transition-all shadow-lg cursor-pointer ${
+          class="relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl backdrop-blur-md border flex items-center justify-center transition-all shadow-lg cursor-pointer ${
             isMuted || volume === 0
               ? 'bg-black/45 hover:bg-black/70 border-white/25 text-white/75'
               : 'bg-emerald-500/25 hover:bg-emerald-500/40 border-emerald-300/75 text-emerald-200'
@@ -649,7 +824,7 @@ export class UIOverlayController {
             ? `
           <div
             id="volume-popover-card"
-            class="absolute top-12 right-0 w-60 p-3.5 rounded-2xl bg-stone-950/95 backdrop-blur-md border border-white/25 text-white shadow-2xl space-y-2.5 z-30"
+            class="absolute top-12 right-0 w-56 sm:w-60 p-3.5 rounded-2xl bg-stone-950/95 backdrop-blur-md border border-white/25 text-white shadow-2xl space-y-2.5 z-30"
           >
             <div class="flex items-center justify-between gap-2 text-[11px]">
               <span class="font-semibold text-emerald-300">Volume Musik & Ambient</span>
@@ -690,7 +865,7 @@ export class UIOverlayController {
         id="nav-open-cart"
         aria-label="Keranjang (${totalItems})"
         title="Keranjang (${totalItems})"
-        class="relative group w-10 h-10 rounded-2xl bg-amber-500/30 hover:bg-amber-500/50 backdrop-blur-md border border-amber-300/80 text-amber-100 flex items-center justify-center transition-all shadow-lg cursor-pointer"
+        class="relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/30 hover:bg-amber-500/50 backdrop-blur-md border border-amber-300/80 text-amber-100 flex items-center justify-center transition-all shadow-lg cursor-pointer"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
           <circle cx="9" cy="21" r="1.5" />
@@ -715,7 +890,7 @@ export class UIOverlayController {
         id="nav-open-admin"
         aria-label="STARLA BUDAYA v.0.2.3"
         title="STARLA BUDAYA v.0.2.3"
-        class="relative group w-10 h-10 rounded-2xl bg-black/45 hover:bg-black/70 backdrop-blur-md border border-white/25 hover:border-amber-300/70 text-white/95 flex items-center justify-center transition-all shadow-lg cursor-pointer"
+        class="relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-black/45 hover:bg-black/70 backdrop-blur-md border border-white/25 hover:border-amber-300/70 text-white/95 flex items-center justify-center transition-all shadow-lg cursor-pointer"
       >
         <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
@@ -792,13 +967,13 @@ export class UIOverlayController {
           id="ml-analog-pad"
           role="application"
           aria-label="Analog Navigasi Kamera 360 Derajat"
-          class="group relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-stone-950/60 hover:bg-stone-950/75 backdrop-blur-xl border border-white/15 hover:border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.12)] flex items-center justify-center touch-none cursor-grab active:cursor-grabbing transition-colors"
+          class="group relative w-24 h-24 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full bg-stone-950/60 hover:bg-stone-950/75 backdrop-blur-xl border border-white/15 hover:border-white/25 shadow-[0_12px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.12)] flex items-center justify-center touch-none cursor-grab active:cursor-grabbing transition-colors"
         >
           <!-- Subtle Precision Orbit Track & Axis Ticks -->
-          <div class="pointer-events-none absolute inset-3 rounded-full border border-white/[0.08]"></div>
-          <div class="pointer-events-none absolute inset-8 rounded-full border border-dashed border-white/[0.06]"></div>
-          <div class="pointer-events-none absolute inset-x-4 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent"></div>
-          <div class="pointer-events-none absolute inset-y-4 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-white/[0.07] to-transparent"></div>
+          <div class="pointer-events-none absolute inset-2.5 sm:inset-3 rounded-full border border-white/[0.08]"></div>
+          <div class="pointer-events-none absolute inset-6 sm:inset-8 rounded-full border border-dashed border-white/[0.06]"></div>
+          <div class="pointer-events-none absolute inset-x-3.5 sm:inset-x-4 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-white/[0.07] to-transparent"></div>
+          <div class="pointer-events-none absolute inset-y-3.5 sm:inset-y-4 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-white/[0.07] to-transparent"></div>
 
           <!-- Clean SVG Cardinal Directional Buttons -->
           <button
@@ -806,9 +981,9 @@ export class UIOverlayController {
             id="analog-tap-up"
             aria-label="Arahkan Pandangan ke Atas"
             title="Pandangan Atas"
-            class="absolute top-1.5 left-1/2 -translate-x-1/2 w-7 h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            class="absolute top-1 sm:top-1.5 left-1/2 -translate-x-1/2 w-6 h-5 sm:w-7 sm:h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M18 15l-6-6-6 6" />
             </svg>
           </button>
@@ -817,9 +992,9 @@ export class UIOverlayController {
             id="analog-tap-down"
             aria-label="Arahkan Pandangan ke Bawah"
             title="Pandangan Bawah"
-            class="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-7 h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            class="absolute bottom-1 sm:bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-5 sm:w-7 sm:h-6 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6" />
             </svg>
           </button>
@@ -828,9 +1003,9 @@ export class UIOverlayController {
             id="analog-tap-left"
             aria-label="Putar Kamera ke Kiri"
             title="Putar Kiri"
-            class="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            class="absolute left-1 sm:left-1.5 top-1/2 -translate-y-1/2 w-5 h-6 sm:w-6 sm:h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
             </svg>
           </button>
@@ -839,9 +1014,9 @@ export class UIOverlayController {
             id="analog-tap-right"
             aria-label="Putar Kamera ke Kanan"
             title="Putar Kanan"
-            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            class="absolute right-1 sm:right-1.5 top-1/2 -translate-y-1/2 w-5 h-6 sm:w-6 sm:h-7 rounded-full flex items-center justify-center text-white/55 hover:text-amber-300 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
           >
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
             </svg>
           </button>
@@ -849,9 +1024,9 @@ export class UIOverlayController {
           <!-- Tactile Floating Center Puck -->
           <div
             id="ml-analog-knob"
-            class="pointer-events-none w-11 h-11 rounded-full bg-gradient-to-b from-stone-800/95 to-stone-950/95 border border-white/25 group-hover:border-amber-300/60 shadow-[0_6px_16px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] flex items-center justify-center transition-transform duration-75"
+            class="pointer-events-none w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 rounded-full bg-gradient-to-b from-stone-800/95 to-stone-950/95 border border-white/25 group-hover:border-amber-300/60 shadow-[0_6px_16px_rgba(0,0,0,0.65),inset_0_1px_1px_rgba(255,255,255,0.25)] flex items-center justify-center transition-transform duration-75"
           >
-            <div class="w-6 h-6 rounded-full border border-white/15 flex items-center justify-center bg-stone-900/80">
+            <div class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-white/15 flex items-center justify-center bg-stone-900/80">
               <div class="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.9)]"></div>
             </div>
           </div>
@@ -903,6 +1078,7 @@ export class UIOverlayController {
         const rect = pad.getBoundingClientRect();
         this.analogCenterX = rect.left + rect.width / 2;
         this.analogCenterY = rect.top + rect.height / 2;
+        this.analogMaxRadius = Math.max(24, Math.round(rect.width * 0.33));
         this.analogActive = true;
         this.analogPointerId = e.pointerId;
         pad.setPointerCapture?.(e.pointerId);
@@ -973,7 +1149,7 @@ export class UIOverlayController {
           aria-expanded="false"
           aria-label="Denah Ruangan (${activeRoom.code})"
           title="Denah Ruangan (${activeRoom.code} · ${this.escapeAttr(activeRoom.shortName)})"
-          class="relative group w-10 h-10 rounded-2xl bg-black/45 hover:bg-amber-500/35 backdrop-blur-md border border-white/25 hover:border-amber-300/80 text-amber-300 flex items-center justify-center transition-all shadow-xl"
+          class="relative group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-black/45 hover:bg-amber-500/35 backdrop-blur-md border border-white/25 hover:border-amber-300/80 text-amber-300 flex items-center justify-center transition-all shadow-xl cursor-pointer"
         >
           <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
             <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
@@ -998,7 +1174,7 @@ export class UIOverlayController {
         <!-- Pop-Up Denah Ruangan (Berisi R1-R5, Denah Interaktif & Daftar Karya Ruangan) -->
         <div
           id="labyrinth-popover-card"
-          class="w-[264px] sm:w-[292px] p-3.5 rounded-2xl bg-stone-950/95 backdrop-blur-md border border-white/25 text-white/95 shadow-2xl space-y-2.5"
+          class="w-[232px] sm:w-[288px] max-w-[calc(100vw-124px)] p-3 sm:p-3.5 rounded-2xl bg-stone-950/95 backdrop-blur-md border border-white/25 text-white/95 shadow-2xl space-y-2.5"
         >
           <!-- Header: Active Room + Compass + Close -->
           <div class="flex items-start justify-between gap-2">
