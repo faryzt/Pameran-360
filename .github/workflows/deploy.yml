@@ -9,6 +9,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: read
 
 concurrency:
   group: "pages"
@@ -33,8 +34,11 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Prepare GitHub Pages output
+      - name: Prepare and verify GitHub Pages output
         run: |
+          test -f dist/index.html
+          test -f dist/favicon.svg
+          ! grep -q 'src/index\.ts' dist/index.html
           cp dist/index.html dist/404.html
           touch dist/.nojekyll
 
@@ -50,6 +54,38 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Prevent legacy branch deploy from overwriting dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Attempt to switch Pages source from legacy branch to GitHub Actions workflow (non-fatal if restricted)
+          curl -fsSL -X PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"build_type":"workflow"}' >/dev/null 2>&1 || true
+
+          # If GitHub's legacy "pages build and deployment" is also running for this commit,
+          # wait for it to finish so actions/deploy-pages@v4 always publishes the compiled dist/ LAST.
+          WAITED=0
+          for i in $(seq 1 24); do
+            ACTIVE=$(curl -fsSL \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs?head_sha=${{ github.sha }}&per_page=20" \
+              | jq -r '[.workflow_runs[]? | select(.name == "pages build and deployment" and (.status == "queued" or .status == "in_progress" or .status == "waiting"))] | length' 2>/dev/null || echo "0")
+            if [ "${ACTIVE:-0}" = "0" ]; then
+              break
+            fi
+            WAITED=1
+            echo "Waiting for legacy pages build and deployment to complete ($i/24)..."
+            sleep 5
+          done
+          if [ "$WAITED" = "1" ]; then
+            sleep 3
+          fi
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
