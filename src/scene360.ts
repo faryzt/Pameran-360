@@ -57,6 +57,7 @@ const textureLoader = new THREE.TextureLoader();
 
 export class Nusantara360Scene extends xb.Script {
   private sphereMesh!: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
+  private transitionSphereMesh!: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
   private hemiLight!: THREE.HemisphereLight;
   private keyLight!: THREE.DirectionalLight;
 
@@ -91,13 +92,22 @@ export class Nusantara360Scene extends xb.Script {
   private activeTouchPoints = new Map<number, { x: number; y: number }>();
   private lastPinchDistance = 0;
 
-  // Loading state callback for smooth fade-in / fade-out loading screen
-  public onLoadingStateChange?: (
-    isLoading: boolean,
-    progress: number,
-    roomName: string,
-    roomSubtitle: string,
-  ) => void;
+  // Smooth walking room-to-room transition (dual-sphere optical crossfade + stride dolly + subtle step bob)
+  private walkTransition: {
+    targetRoom: RoomId;
+    startYaw: number;
+    portalYaw: number;
+    entryYaw: number;
+    startPitch: number;
+    baseFov: number;
+    startTime: number;
+    durationMs: number;
+    crossfadeStartedAt: number | null;
+    targetTexture: THREE.Texture;
+    textureReady: boolean;
+    targetYawOffsetDeg: number;
+    targetTintHex: number;
+  } | null = null;
 
   // Smooth cubic ease-in-out focus transition when moving focus between artworks
   private focusTransition: {
@@ -345,19 +355,32 @@ export class Nusantara360Scene extends xb.Script {
     });
   }
 
-  private getRoomPanoramaTexture(room: RoomId, themeId: LightingThemeId): THREE.Texture {
+  private getRoomPanoramaTexture(
+    room: RoomId,
+    themeId: LightingThemeId,
+    onReady?: (tex: THREE.Texture) => void,
+  ): THREE.Texture {
     const roomSpec = ROOMS[room] || ROOMS.ruang_1;
     const url = roomSpec.panoramaUrl;
     const cached = photoTextureCache.get(url);
     if (cached) {
-      if ((cached as any).image && !galleryStore.getState().transitioningRoom) {
-        this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+      if ((cached as any).image) {
+        onReady?.(cached);
+      } else if (onReady) {
+        // Already loading in background: poll lightly until decoded
+        const checkReady = () => {
+          if ((cached as any).image) {
+            onReady(cached);
+          } else {
+            window.setTimeout(checkReady, 30);
+          }
+        };
+        window.setTimeout(checkReady, 30);
       }
       return cached;
     }
 
     try {
-      this.onLoadingStateChange?.(true, 28, roomSpec.name, roomSpec.subtitle);
       const renderer = (xb as any).core?.renderer as THREE.WebGLRenderer | undefined;
       const maxAniso = Math.min(renderer?.capabilities?.getMaxAnisotropy?.() || 4, 4);
       const tex = textureLoader.load(
@@ -374,17 +397,9 @@ export class Nusantara360Scene extends xb.Script {
             this.sphereMesh.material.needsUpdate = true;
           }
           this.pinsDirty = true;
-          this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+          onReady?.(loaded);
         },
-        (progressEvt) => {
-          if (progressEvt.lengthComputable && progressEvt.total > 0) {
-            const pct = Math.min(
-              92,
-              Math.max(32, Math.round((progressEvt.loaded / progressEvt.total) * 90)),
-            );
-            this.onLoadingStateChange?.(true, pct, roomSpec.name, roomSpec.subtitle);
-          }
-        },
+        undefined,
         () => {
           const fallbackTex = createSeamlessPanoramaTexture('foyer', themeId);
           photoTextureCache.set(url, fallbackTex);
@@ -393,7 +408,7 @@ export class Nusantara360Scene extends xb.Script {
             this.sphereMesh.material.needsUpdate = true;
           }
           this.pinsDirty = true;
-          this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+          onReady?.(fallbackTex);
         },
       );
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -405,7 +420,7 @@ export class Nusantara360Scene extends xb.Script {
       return tex;
     } catch {
       const fallback = createSeamlessPanoramaTexture('foyer', themeId);
-      this.onLoadingStateChange?.(false, 100, roomSpec.name, roomSpec.subtitle);
+      onReady?.(fallback);
       return fallback;
     }
   }
@@ -557,6 +572,25 @@ export class Nusantara360Scene extends xb.Script {
     this.sphereMesh.renderOrder = -1000;
     (this.sphereMesh as any).xb = { pointerEvents: 'none' };
     this.add(this.sphereMesh);
+
+    // Secondary concentric panorama sphere (reuses same geometry -> zero extra VRAM)
+    // for silky optical crossfade while walking smoothly between rooms.
+    const transitionMat = new THREE.MeshBasicMaterial({
+      map: initialTex,
+      color: new THREE.Color(0xffffff),
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.transitionSphereMesh = new THREE.Mesh(sphereGeo, transitionMat);
+    this.transitionSphereMesh.scale.set(-0.985, 0.985, 0.985);
+    this.transitionSphereMesh.position.set(0, 1.6, 0);
+    this.transitionSphereMesh.renderOrder = -999;
+    this.transitionSphereMesh.visible = false;
+    (this.transitionSphereMesh as any).xb = { pointerEvents: 'none' };
+    this.add(this.transitionSphereMesh);
   }
 
   private setupSpatialUI() {
@@ -775,32 +809,61 @@ export class Nusantara360Scene extends xb.Script {
     if (state.transitioningRoom || state.currentRoom === targetRoom) return;
 
     this.focusTransition = null;
+    this.velocityYaw = 0;
+    this.velocityPitch = 0;
+    this.isDragging = false;
+    this.activePointerId = null;
+
     state.setTransitioningRoom(true);
     const nextRoomSpec = ROOMS[targetRoom] || ROOMS.ruang_1;
-    this.onLoadingStateChange?.(true, 45, nextRoomSpec.name, nextRoomSpec.subtitle);
+    const theme = LIGHTING_THEMES[state.lightingTheme] || LIGHTING_THEMES.bright_daylight;
 
-    // If clicked from a directional portal, smoothly turn toward that portal along shortest angle while zooming in
-    if (typeof portalYaw === 'number') {
-      this.targetYawDeg =
-        this.cameraYawDeg + shortestAngleDeltaDeg(this.cameraYawDeg, portalYaw);
+    const resolvedPortalYaw =
+      typeof portalYaw === 'number'
+        ? this.cameraYawDeg + shortestAngleDeltaDeg(this.cameraYawDeg, portalYaw)
+        : this.cameraYawDeg;
+    const resolvedEntryYaw =
+      typeof entryYaw === 'number' ? entryYaw : nextRoomSpec.defaultYawDeg;
+
+    const walkState = {
+      targetRoom,
+      startYaw: this.cameraYawDeg,
+      portalYaw: resolvedPortalYaw,
+      entryYaw: resolvedEntryYaw,
+      startPitch: this.cameraPitchDeg,
+      baseFov: this.getResponsiveBaseFov(),
+      startTime: performance.now(),
+      durationMs: 760,
+      crossfadeStartedAt: null as number | null,
+      targetTexture: null as unknown as THREE.Texture,
+      textureReady: false,
+      targetYawOffsetDeg: nextRoomSpec.yawOffsetDeg,
+      targetTintHex: theme.sphereTintHex,
+    };
+
+    const tex = this.getRoomPanoramaTexture(targetRoom, state.lightingTheme, (loadedTex) => {
+      walkState.targetTexture = loadedTex;
+      walkState.textureReady = true;
+      if (this.walkTransition === walkState && this.transitionSphereMesh) {
+        this.transitionSphereMesh.material.map = loadedTex;
+        this.transitionSphereMesh.material.needsUpdate = true;
+      }
+    });
+    walkState.targetTexture = tex;
+    if ((tex as any).image) {
+      walkState.textureReady = true;
     }
-    this.targetFov = 45;
 
-    window.setTimeout(() => {
-      galleryStore.getState().setRoom(targetRoom);
-      const nextYaw =
-        typeof entryYaw === 'number' ? entryYaw : nextRoomSpec.defaultYawDeg;
-      this.cameraYawDeg = nextYaw;
-      this.targetYawDeg = nextYaw;
-      this.cameraPitchDeg = 0;
-      this.targetPitchDeg = 0;
-      this.targetFov = this.getResponsiveBaseFov();
+    if (this.transitionSphereMesh) {
+      this.transitionSphereMesh.material.map = walkState.targetTexture;
+      this.transitionSphereMesh.material.color.setHex(theme.sphereTintHex);
+      this.transitionSphereMesh.material.opacity = 0;
+      this.transitionSphereMesh.material.needsUpdate = true;
+      this.transitionSphereMesh.visible = false;
+    }
 
-      window.setTimeout(() => {
-        galleryStore.getState().setTransitioningRoom(false);
-        this.onLoadingStateChange?.(false, 100, nextRoomSpec.name, nextRoomSpec.subtitle);
-      }, 240);
-    }, 220);
+    this.walkTransition = walkState;
+    this.pinsDirty = true;
   }
 
   /**
@@ -952,7 +1015,7 @@ export class Nusantara360Scene extends xb.Script {
 
   private setupDesktopPointerControls() {
     window.addEventListener('pointerdown', (e) => {
-      if (this.isAnyModalOpen()) return;
+      if (this.isAnyModalOpen() || this.walkTransition) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -1198,9 +1261,108 @@ export class Nusantara360Scene extends xb.Script {
 
   update() {
     const dt = Math.min((xb as any).getDeltaTime?.() || 0.016, 0.06);
+    let walkOffsetX = 0;
+    let walkOffsetY = 0;
+    let walkOffsetZ = 0;
 
-    // Apply Mobile Legends Virtual Analog Joystick continuous rotation
-    if (Math.abs(this.analogX) > 0.01 || Math.abs(this.analogY) > 0.01) {
+    if (this.walkTransition) {
+      const wt = this.walkTransition;
+      const now = performance.now();
+      const elapsed = now - wt.startTime;
+      const rawT = THREE.MathUtils.clamp(elapsed / wt.durationMs, 0, 1);
+
+      // Phase 1 (0..0.46): smoothly turn to face portal & level gaze while stepping forward
+      const turnT = THREE.MathUtils.clamp(rawT / 0.46, 0, 1);
+      const turnEase =
+        turnT < 0.5
+          ? 4 * turnT * turnT * turnT
+          : 1 - Math.pow(-2 * turnT + 2, 3) / 2;
+
+      this.cameraYawDeg = THREE.MathUtils.lerp(wt.startYaw, wt.portalYaw, turnEase);
+      this.cameraPitchDeg = THREE.MathUtils.lerp(wt.startPitch, 0, turnEase);
+      this.targetYawDeg = this.cameraYawDeg;
+      this.targetPitchDeg = this.cameraPitchDeg;
+
+      // Optical crossfade begins smoothly at ~22% into the step once the target texture is decoded
+      let crossfadeAlpha = 0;
+      if (rawT >= 0.22 && wt.textureReady) {
+        if (wt.crossfadeStartedAt === null) {
+          wt.crossfadeStartedAt = now;
+        }
+        const cfT = THREE.MathUtils.clamp((now - wt.crossfadeStartedAt) / 430, 0, 1);
+        // Quintic smoothstep for cinema-grade optical dissolve
+        crossfadeAlpha = cfT * cfT * cfT * (cfT * (cfT * 6 - 15) + 10);
+
+        if (this.transitionSphereMesh) {
+          this.transitionSphereMesh.visible = true;
+          this.transitionSphereMesh.material.opacity = crossfadeAlpha;
+          // Mathematically align incoming room's entryYaw to current cameraYawDeg so swap is 100% seamless
+          this.transitionSphereMesh.rotation.y =
+            -Math.PI / 2 +
+            THREE.MathUtils.degToRad(wt.targetYawOffsetDeg) -
+            THREE.MathUtils.degToRad(this.cameraYawDeg - wt.entryYaw);
+        }
+      }
+
+      // Hide old room 3D props cleanly once halfway through the doorway
+      const hideProps = crossfadeAlpha > 0.35;
+      this.artworksGroup.visible = !hideProps;
+      this.hotspotsGroup.visible = !hideProps;
+
+      // Natural walking stride dolly + subtle two-step footstep bob (smoothly zeroed at start & end)
+      const strideWindow = Math.sin(rawT * Math.PI);
+      const strideForward = strideWindow * 0.9;
+      const yawRad = THREE.MathUtils.degToRad(this.cameraYawDeg);
+      walkOffsetX = Math.sin(yawRad) * strideForward;
+      walkOffsetZ = -Math.cos(yawRad) * strideForward;
+      walkOffsetY = Math.sin(rawT * Math.PI * 2) * 0.03 * strideWindow;
+
+      // Street-View forward-glide FOV arc: glides inward toward doorway, then opens smoothly into new room
+      const zoomFov = Math.max(46, wt.baseFov - 15);
+      if (rawT < 0.44) {
+        const zT = rawT / 0.44;
+        const zEase = zT * zT * (3 - 2 * zT);
+        this.currentFov = THREE.MathUtils.lerp(wt.baseFov, zoomFov, zEase);
+      } else {
+        const oT = (rawT - 0.44) / 0.56;
+        const oEase = 1 - Math.pow(1 - oT, 3);
+        this.currentFov = THREE.MathUtils.lerp(zoomFov, wt.baseFov, oEase);
+      }
+      this.targetFov = wt.baseFov;
+      this.pinsDirty = true;
+
+      // Finish atomically once both the walking arc and optical dissolve reach 100% (or fallback after 2.4s max)
+      const crossfadeDone =
+        (wt.crossfadeStartedAt !== null && crossfadeAlpha >= 0.999) ||
+        elapsed > 2400;
+      if (rawT >= 1 && crossfadeDone) {
+        const finishedRoom = wt.targetRoom;
+        const finishedEntryYaw = wt.entryYaw;
+        const finishedBaseFov = wt.baseFov;
+        this.walkTransition = null;
+
+        galleryStore.getState().setRoom(finishedRoom);
+        this.cameraYawDeg = finishedEntryYaw;
+        this.targetYawDeg = finishedEntryYaw;
+        this.cameraPitchDeg = 0;
+        this.targetPitchDeg = 0;
+        this.currentFov = finishedBaseFov;
+        this.targetFov = finishedBaseFov;
+
+        if (this.transitionSphereMesh) {
+          this.transitionSphereMesh.visible = false;
+          this.transitionSphereMesh.material.opacity = 0;
+        }
+        this.artworksGroup.visible = true;
+        this.hotspotsGroup.visible = true;
+        walkOffsetX = 0;
+        walkOffsetY = 0;
+        walkOffsetZ = 0;
+        this.pinsDirty = true;
+        galleryStore.getState().setTransitioningRoom(false);
+      }
+    } else if (Math.abs(this.analogX) > 0.01 || Math.abs(this.analogY) > 0.01) {
+      // Apply Mobile Legends Virtual Analog Joystick continuous rotation
       this.focusTransition = null;
       const yawSpeed = 120;
       const pitchSpeed = 72;
@@ -1270,7 +1432,7 @@ export class Nusantara360Scene extends xb.Script {
       }
     }
 
-    if (!this.focusTransition) {
+    if (!this.focusTransition && !this.walkTransition) {
       // Instant tracking while dragging (zero input lag), smooth damping during normal view
       const dampFactor = this.isDragging
         ? 1 - Math.exp(-42 * dt)
@@ -1304,7 +1466,7 @@ export class Nusantara360Scene extends xb.Script {
     }
 
     if (camera && !isPresentingXr) {
-      camera.position.set(0, 1.6, 0);
+      camera.position.set(walkOffsetX, 1.6 + walkOffsetY, walkOffsetZ);
       _targetEuler.set(
         THREE.MathUtils.degToRad(this.cameraPitchDeg),
         THREE.MathUtils.degToRad(-this.cameraYawDeg),
@@ -1411,5 +1573,6 @@ export class Nusantara360Scene extends xb.Script {
     this.composer?.dispose();
     this.sphereMesh?.geometry.dispose();
     this.sphereMesh?.material.dispose();
+    this.transitionSphereMesh?.material.dispose();
   }
 }

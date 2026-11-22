@@ -35,7 +35,7 @@ export class UIOverlayController {
   private sceneScript: Nusantara360Scene;
   private audioManager: BackgroundAudioManager;
 
-  // Dedicated DOM sub-containers for the 4-Corner Transparent HUD + Street-View Pins + Loading Screen
+  // Dedicated DOM sub-containers for the 4-Corner Transparent HUD + Street-View Pins
   private pinsLayer!: HTMLElement;
   private topLeftLayer!: HTMLElement;
   private topRightLayer!: HTMLElement;
@@ -43,15 +43,8 @@ export class UIOverlayController {
   private bottomRightInfoLayer!: HTMLElement;
   private modalLayer!: HTMLElement;
   private toastLayer!: HTMLElement;
-  private loadingLayer!: HTMLElement;
-
-  // Fade-In / Fade-Out Exhibition Loading Screen State
-  private isLoadingVisible = true;
-  private loadingProgress = 24;
-  private loadingTitle = 'Memuat Data Pameran 360°...';
-  private loadingSubtitle = 'Menyiapkan ruang galeri interaktif & koleksi karya pelajar Nusantara';
-  private loadingFadeOutTimer?: number;
-  private loadingProgressTimer?: number;
+  private roomBannerLayer!: HTMLElement;
+  private roomBannerTimer?: number;
 
   private pinElements = new Map<string, HTMLButtonElement>();
   private hotspotElements = new Map<RoomId, HTMLButtonElement>();
@@ -103,7 +96,6 @@ export class UIOverlayController {
     );
     this.initDOMStructure();
     this.renderAll();
-    this.setupInitialAndSceneLoadingHooks();
 
     window.addEventListener('resize', () => {
       this.renderBottomRightInfo();
@@ -112,17 +104,14 @@ export class UIOverlayController {
     galleryStore.subscribe((state, prevState) => {
       if (state.currentRoom !== prevState.currentRoom) {
         this.audioManager.setRoom(state.currentRoom);
+        const roomSpec = ROOMS[state.currentRoom] || ROOMS.ruang_1;
+        this.showRoomArrivalBanner(roomSpec.code, roomSpec.name);
       }
       if (state.transitioningRoom !== prevState.transitioningRoom) {
-        const roomSpec = ROOMS[state.currentRoom] || ROOMS.ruang_1;
-        if (!state.transitioningRoom) {
-          this.setLoadingScreenState(
-            false,
-            100,
-            roomSpec.name,
-            roomSpec.subtitle,
-          );
-        }
+        this.pinsLayer?.classList.toggle(
+          'pins-walking-transition',
+          state.transitioningRoom,
+        );
       }
       if (state.audioMuted !== prevState.audioMuted) {
         this.audioManager.setMuted(state.audioMuted);
@@ -191,7 +180,7 @@ export class UIOverlayController {
     // 1. Projected 3D Artwork Pins, Galeri Pin & Street-View Floor Chevrons Layer
     this.pinsLayer = document.createElement('div');
     this.pinsLayer.id = 'layer-3d-pins';
-    this.pinsLayer.className = 'fixed inset-0 pointer-events-none z-[125]';
+    this.pinsLayer.className = 'pins-layer-base fixed inset-0 pointer-events-none z-[125]';
 
     // 2. Pojok Kiri Atas (Kosong — judul atas "Pameran Virtual" dihapus sesuai permintaan)
     this.topLeftLayer = document.createElement('div');
@@ -232,14 +221,12 @@ export class UIOverlayController {
     this.toastLayer.className =
       'fixed top-14 sm:top-16 right-3 sm:right-4 z-[350] pointer-events-none transition-opacity duration-200 max-w-[calc(100vw-24px)]';
 
-    // 8. Smooth Fade-In / Fade-Out Exhibition Loading Screen Layer
-    this.loadingLayer = document.createElement('div');
-    this.loadingLayer.id = 'exhibition-loading-screen';
-    this.loadingLayer.setAttribute('role', 'status');
-    this.loadingLayer.setAttribute('aria-live', 'polite');
-    this.loadingLayer.setAttribute('aria-label', 'Memuat Data Pameran');
-    this.loadingLayer.className =
-      'exhibition-loader-overlay is-visible fixed inset-0 z-[380] flex items-center justify-center bg-stone-950/90 backdrop-blur-xl p-4';
+    // 8. Subtle non-blocking Room Arrival Whisper (replaces full-screen loading overlay)
+    this.roomBannerLayer = document.createElement('div');
+    this.roomBannerLayer.id = 'room-arrival-banner';
+    this.roomBannerLayer.setAttribute('aria-live', 'polite');
+    this.roomBannerLayer.className =
+      'room-arrival-banner fixed top-4 z-[140] pointer-events-none';
 
     this.root.append(
       this.pinsLayer,
@@ -249,7 +236,7 @@ export class UIOverlayController {
       this.bottomRightInfoLayer,
       this.modalLayer,
       this.toastLayer,
-      this.loadingLayer,
+      this.roomBannerLayer,
     );
 
     window.addEventListener('keydown', (e) => {
@@ -273,149 +260,24 @@ export class UIOverlayController {
     this.syncPinButtonsPool();
   }
 
-  private renderLoadingScreen() {
-    if (!this.loadingLayer) return;
-    const state = galleryStore.getState();
-    const activeRoom = ROOMS[state.currentRoom] || ROOMS.ruang_1;
-    const totalArtworks = state.artworks.length;
-
-    this.loadingLayer.innerHTML = `
-      <div class="exhibition-loader-card w-full max-w-xs sm:max-w-sm rounded-3xl bg-stone-900/90 border border-white/15 px-6 py-7 shadow-[0_24px_64px_rgba(0,0,0,0.75)] flex flex-col items-center text-center space-y-4">
-        <!-- Dual Orbital 360° Spinner -->
-        <div class="relative w-14 h-14 flex items-center justify-center">
-          <div class="loader-ring-outer absolute inset-0 rounded-full border-2 border-amber-400/20 border-t-amber-400 border-r-emerald-400/70"></div>
-          <div class="loader-ring-inner absolute inset-2 rounded-full border border-dashed border-white/25 border-b-emerald-300"></div>
-          <div class="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.95)]"></div>
-        </div>
-
-        <div class="space-y-1 max-w-full">
-          <div id="loading-screen-title" class="text-sm sm:text-base font-bold text-white tracking-tight truncate">
-            ${this.escapeHtml(this.loadingTitle)}
-          </div>
-          <p id="loading-screen-subtitle" class="text-[11px] sm:text-xs text-stone-400 leading-relaxed line-clamp-2">
-            ${this.escapeHtml(this.loadingSubtitle)}
-          </p>
-        </div>
-
-        <!-- Smooth Progress Bar -->
-        <div class="w-full space-y-1.5 pt-1">
-          <div class="w-full h-1.5 rounded-full bg-stone-800 overflow-hidden border border-white/10">
-            <div
-              id="loading-screen-progress-bar"
-              style="width: ${Math.min(100, Math.max(8, this.loadingProgress))}%"
-              class="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 transition-all duration-300 ease-out"
-            ></div>
-          </div>
-          <div class="flex items-center justify-between text-[10px] font-mono text-stone-400">
-            <span id="loading-screen-room-badge" class="text-amber-300/90 font-semibold">${this.escapeHtml(activeRoom.code)} · ${totalArtworks} Karya</span>
-            <span id="loading-screen-percent" class="tabular-nums text-emerald-300 font-bold">${Math.round(this.loadingProgress)}%</span>
-          </div>
-        </div>
+  private showRoomArrivalBanner(roomCode: string, roomName: string) {
+    if (!this.roomBannerLayer) return;
+    if (this.roomBannerTimer) {
+      window.clearTimeout(this.roomBannerTimer);
+      this.roomBannerTimer = undefined;
+    }
+    this.roomBannerLayer.innerHTML = `
+      <div class="px-3.5 py-1.5 rounded-full bg-stone-950/70 border border-white/15 shadow-lg flex items-center gap-2 text-[11px] sm:text-xs font-medium text-stone-100 whitespace-nowrap">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        <span class="font-mono text-amber-300 font-bold">${this.escapeHtml(roomCode)}</span>
+        <span class="text-white/35">·</span>
+        <span>${this.escapeHtml(roomName.replace(/^Ruang \d+\s*·\s*/i, ''))}</span>
       </div>
     `;
-  }
-
-  public setLoadingScreenState(
-    visible: boolean,
-    progress?: number,
-    title?: string,
-    subtitle?: string,
-  ) {
-    if (!this.loadingLayer) return;
-    if (typeof progress === 'number') {
-      this.loadingProgress = Math.min(100, Math.max(0, progress));
-    }
-    if (title) this.loadingTitle = title;
-    if (subtitle) this.loadingSubtitle = subtitle;
-
-    const titleEl = this.loadingLayer.querySelector('#loading-screen-title');
-    const subEl = this.loadingLayer.querySelector('#loading-screen-subtitle');
-    const barEl = this.loadingLayer.querySelector(
-      '#loading-screen-progress-bar',
-    ) as HTMLElement | null;
-    const pctEl = this.loadingLayer.querySelector('#loading-screen-percent');
-    const roomBadgeEl = this.loadingLayer.querySelector('#loading-screen-room-badge');
-
-    const st = galleryStore.getState();
-    const room = ROOMS[st.currentRoom] || ROOMS.ruang_1;
-
-    if (titleEl) titleEl.textContent = this.loadingTitle;
-    if (subEl) subEl.textContent = this.loadingSubtitle;
-    if (barEl) barEl.style.width = `${Math.min(100, Math.max(8, this.loadingProgress))}%`;
-    if (pctEl) pctEl.textContent = `${Math.round(this.loadingProgress)}%`;
-    if (roomBadgeEl) roomBadgeEl.textContent = `${room.code} · ${st.artworks.length} Karya`;
-
-    if (visible) {
-      if (this.loadingFadeOutTimer) {
-        window.clearTimeout(this.loadingFadeOutTimer);
-        this.loadingFadeOutTimer = undefined;
-      }
-      this.isLoadingVisible = true;
-      this.loadingLayer.classList.remove('is-hidden');
-      this.loadingLayer.classList.add('is-visible');
-      this.loadingLayer.setAttribute('aria-hidden', 'false');
-    } else {
-      this.loadingProgress = 100;
-      if (barEl) barEl.style.width = '100%';
-      if (pctEl) pctEl.textContent = '100%';
-      if (this.loadingFadeOutTimer) {
-        window.clearTimeout(this.loadingFadeOutTimer);
-      }
-      this.loadingFadeOutTimer = window.setTimeout(() => {
-        this.isLoadingVisible = false;
-        this.loadingLayer.classList.remove('is-visible');
-        this.loadingLayer.classList.add('is-hidden');
-        this.loadingLayer.setAttribute('aria-hidden', 'true');
-      }, 160);
-    }
-  }
-
-  private setupInitialAndSceneLoadingHooks() {
-    const st = galleryStore.getState();
-    const initialRoom = ROOMS[st.currentRoom] || ROOMS.ruang_1;
-    this.setLoadingScreenState(
-      true,
-      32,
-      `Memuat ${initialRoom.name}...`,
-      initialRoom.subtitle,
-    );
-
-    // Smooth incremental progress while 360° texture & exhibition data initialize
-    this.loadingProgressTimer = window.setInterval(() => {
-      if (!this.isLoadingVisible) return;
-      if (this.loadingProgress < 86) {
-        this.setLoadingScreenState(true, this.loadingProgress + 14);
-      }
-    }, 140);
-
-    this.sceneScript.onLoadingStateChange = (isLoading, progress, roomName, roomSubtitle) => {
-      if (isLoading) {
-        this.setLoadingScreenState(
-          true,
-          Math.max(this.loadingProgress, progress),
-          `Memuat ${roomName}...`,
-          roomSubtitle,
-        );
-      } else {
-        if (this.loadingProgressTimer) {
-          window.clearInterval(this.loadingProgressTimer);
-          this.loadingProgressTimer = undefined;
-        }
-        this.setLoadingScreenState(false, 100, roomName, roomSubtitle);
-      }
-    };
-
-    // Safety fallback so initial loading screen always fades out smoothly within 900ms even if texture is cached
-    window.setTimeout(() => {
-      if (this.loadingProgressTimer) {
-        window.clearInterval(this.loadingProgressTimer);
-        this.loadingProgressTimer = undefined;
-      }
-      if (!galleryStore.getState().transitioningRoom) {
-        const room = ROOMS[galleryStore.getState().currentRoom] || ROOMS.ruang_1;
-        this.setLoadingScreenState(false, 100, room.name, room.subtitle);
-      }
-    }, 680);
+    this.roomBannerLayer.classList.add('is-shown');
+    this.roomBannerTimer = window.setTimeout(() => {
+      this.roomBannerLayer.classList.remove('is-shown');
+    }, 1500);
   }
 
   public showToast(msg: string) {
@@ -434,7 +296,6 @@ export class UIOverlayController {
   }
 
   private renderAll() {
-    this.renderLoadingScreen();
     this.renderTopLeftCorner();
     this.renderTopRightCorner();
     this.renderBottomLeftAnalog();

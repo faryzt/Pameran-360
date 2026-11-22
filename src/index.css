@@ -96,63 +96,31 @@ canvas:active {
   cursor: grabbing;
 }
 
-/* Smooth Fade-In / Fade-Out Exhibition Loading Screen Overlay */
-.exhibition-loader-overlay {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    visibility 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 460ms ease;
-  will-change: opacity, visibility;
-}
-
-.exhibition-loader-overlay.is-visible {
+/* Smooth GPU-composited fade for 3D pins & arrival cue during walking room transitions */
+.pins-layer-base {
   opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
+  transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
 }
 
-.exhibition-loader-overlay.is-hidden {
+.pins-layer-base.pins-walking-transition {
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
 }
 
-.exhibition-loader-card {
-  transform: translate3d(0, 8px, 0) scale(0.97);
-  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1);
+.room-arrival-banner {
+  left: 50%;
+  opacity: 0;
+  transform: translate3d(-50%, -8px, 0) scale(0.97);
+  transition:
+    opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
-.exhibition-loader-overlay.is-visible .exhibition-loader-card {
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-@keyframes loader-orbit-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes loader-orbit-reverse {
-  0% {
-    transform: rotate(360deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
-}
-
-.loader-ring-outer {
-  animation: loader-orbit-spin 2.4s linear infinite;
-}
-
-.loader-ring-inner {
-  animation: loader-orbit-reverse 1.8s linear infinite;
+.room-arrival-banner.is-shown {
+  opacity: 1;
+  transform: translate3d(-50%, 0, 0) scale(1);
 }
 
 /* Lightweight zero-repaint GPU micro-interactions for 360° hotspots & pins */
