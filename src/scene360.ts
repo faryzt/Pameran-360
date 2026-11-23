@@ -332,6 +332,10 @@ export class Nusantara360Scene extends xb.Script {
       new Set(Object.values(ROOMS).map((r) => r.panoramaUrl)),
     ).filter((u) => u !== activeUrl);
 
+    const isMobileViewport = window.innerWidth < 768;
+    const baseDelayMs = isMobileViewport ? 2400 : 1600;
+    const stepDelayMs = isMobileViewport ? 1400 : 1100;
+
     urls.forEach((url, idx) => {
       const timerId = window.setTimeout(() => {
         if (!photoTextureCache.has(url)) {
@@ -350,7 +354,7 @@ export class Nusantara360Scene extends xb.Script {
           tex.anisotropy = maxAniso;
           photoTextureCache.set(url, tex);
         }
-      }, 1600 + idx * 1100);
+      }, baseDelayMs + idx * stepDelayMs);
       this.preloadTimers.push(timerId);
     });
   }
@@ -431,8 +435,9 @@ export class Nusantara360Scene extends xb.Script {
     const camera = (xb as any).core?.camera as THREE.PerspectiveCamera | undefined;
 
     if (renderer) {
-      // Cap pixel ratio to 1.35 for sharp hyper-realistic 360° clarity and smooth 60 FPS
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.35));
+      // Lighter pixel ratio cap on mobile for ultra-smooth, fast initial rendering
+      const maxDpr = window.innerWidth < 768 ? 1.15 : 1.35;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.0;
@@ -495,7 +500,8 @@ export class Nusantara360Scene extends xb.Script {
       this.resizeListener = () => {
         const w = Math.max(window.innerWidth, 1);
         const h = Math.max(window.innerHeight, 1);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+        const maxResizeDpr = w < 768 ? 1.15 : 1.25;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxResizeDpr));
         if (!renderer.xr?.isPresenting) {
           renderer.setSize(w, h, false);
         }
@@ -596,7 +602,7 @@ export class Nusantara360Scene extends xb.Script {
   private setupSpatialUI() {
     try {
       this.spatialTitleText = new xb.UIText({
-        text: 'Pameran Virtual · Galeri Karya',
+        text: 'Galeri Karya Nusantara',
         style: { fontSize: 26, fontWeight: 'bold', textAlign: 'center' },
       });
       this.spatialSubText = new xb.UIText({

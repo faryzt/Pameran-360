@@ -150,7 +150,17 @@ canvas:active {
   transform: translate3d(0, -1.5px, 0) scale(1.05);
 }
 
-/* Position XR Blocks Enter XR button subtly at top-center so all 4 corners remain dedicated to the 4-corner transparent HUD */
+/* Seamless unified touch scroll for artwork popup (mobile & desktop) */
+.modal-seamless-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+}
+
+/* Position XR Blocks Enter XR button subtly at top-center on desktop; hide VR completely on mobile devices */
 #XRButtonWrapper {
   position: fixed !important;
   top: 14px !important;
@@ -199,6 +209,19 @@ canvas:active {
 .XRButton::after {
   width: 14px !important;
   height: 14px !important;
+}
+
+/* Remove VR icon & XR button completely on mobile devices */
+@media (max-width: 767px), (pointer: coarse) {
+  #XRButtonWrapper,
+  .XRButton,
+  #VRButton,
+  #ARButton {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
 }
 
 /* Prevent default XR simulator keyboard instructions overlay from colliding with 360 gallery HUD & modals */

@@ -1526,35 +1526,35 @@ export class UIOverlayController {
                 ${this.escapeHtml((c.visitorName || 'P').charAt(0).toUpperCase())}
               </div>
               <div class="min-w-0 flex-1 space-y-1">
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-xs font-semibold text-white truncate">${this.escapeHtml(c.visitorName)}</span>
-                    ${
-                      isCurator
-                        ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-[9px] font-semibold text-amber-300 shrink-0">Kurator</span>`
-                        : ''
-                    }
+                <div class="flex items-start justify-between gap-2">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-xs font-semibold text-white leading-tight">${this.escapeHtml(c.visitorName)}</span>
+                      ${
+                        isCurator
+                          ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-400/30 text-[9px] font-semibold text-amber-300 shrink-0">Kurator</span>`
+                          : ''
+                      }
+                    </div>
+                    <span class="block text-[10px] text-stone-500 mt-0.5">${this.escapeHtml(c.createdAt)}</span>
                   </div>
-                  <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-[10px] text-stone-500">${this.escapeHtml(c.createdAt)}</span>
-                    ${
-                      isCurator
-                        ? `<button
-                            type="button"
-                            data-edit-curator-comment="${this.escapeAttr(c.id)}"
-                            aria-label="Edit Ulasan Kurator"
-                            title="Edit Ulasan Kurator"
-                            class="px-2 py-0.5 rounded-md bg-stone-800/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400/50 text-[10px] font-medium text-stone-300 hover:text-amber-200 flex items-center gap-1 transition-colors cursor-pointer"
-                          >
-                            <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                              <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            <span>Edit</span>
-                          </button>`
-                        : ''
-                    }
-                  </div>
+                  ${
+                    isCurator
+                      ? `<button
+                          type="button"
+                          data-edit-curator-comment="${this.escapeAttr(c.id)}"
+                          aria-label="Edit Ulasan Kurator"
+                          title="Edit Ulasan Kurator"
+                          class="px-2 py-0.5 rounded-md bg-stone-800/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400/50 text-[10px] font-medium text-stone-300 hover:text-amber-200 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                        >
+                          <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                          <span>Edit</span>
+                        </button>`
+                      : ''
+                  }
                 </div>
                 <p class="text-xs text-stone-300 leading-relaxed">${this.escapeHtml(c.message)}</p>
               </div>
@@ -1567,177 +1567,182 @@ export class UIOverlayController {
       <div
         data-ui-interactive="true"
         id="artwork-modal-backdrop"
-        class="fixed inset-0 z-[260] pointer-events-auto flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-4 select-text"
+        class="fixed inset-0 z-[260] pointer-events-auto flex items-center justify-center bg-black/80 backdrop-blur-xs p-2.5 sm:p-4 select-text"
       >
         <article
           id="artwork-modal-dialog"
           role="dialog"
           aria-modal="true"
           aria-label="Detail Karya ${this.escapeAttr(art.title)}"
-          class="pointer-events-auto w-full max-w-2xl max-h-[92vh] rounded-3xl bg-stone-950 border border-white/15 text-stone-100 shadow-2xl overflow-hidden flex flex-col"
+          class="relative pointer-events-auto w-full max-w-2xl max-h-[92dvh] rounded-3xl bg-stone-950 border border-white/15 text-stone-100 shadow-2xl overflow-hidden flex flex-col"
         >
-          <!-- Gambar Karya Ukuran Besar agar Fokus (Tanpa teks badge di atas gambar) -->
-          <div class="relative w-full h-64 sm:h-80 shrink-0 bg-stone-900 overflow-hidden border-b border-stone-800/80">
-            <img
-              id="modal-artwork-image"
-              src="${previewSrc}"
-              alt="Foto Karya ${this.escapeAttr(art.title)}"
-              referrerpolicy="no-referrer"
-              class="w-full h-full object-cover"
-            />
-            <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent pointer-events-none"></div>
+          <!-- Tombol Tutup Minimalis Selalu Mudah Dijangkau saat Scroll -->
+          <button
+            type="button"
+            id="btn-close-artwork-modal"
+            aria-label="Tutup Pop Up Karya"
+            title="Tutup"
+            class="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/70 hover:bg-rose-600/90 backdrop-blur-md border border-white/25 text-white flex items-center justify-center transition-all shadow-lg cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
 
-            ${
-              prevArt && prevArt.id !== art.id
-                ? `
-              <button
-                type="button"
-                id="btn-prev-artwork"
-                aria-label="Fokus ke Karya Sebelumnya (${this.escapeAttr(prevArt.title)})"
-                title="Transisi Kamera ke ${this.escapeAttr(prevArt.title)}"
-                class="absolute left-3.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/65 hover:bg-amber-500 backdrop-blur-md border border-white/25 hover:border-amber-300 text-white hover:text-stone-950 flex items-center justify-center transition-all shadow-lg cursor-pointer"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
-            `
-                : ''
-            }
+          <!-- Satu Kontainer Scroll Seamless (Mobile & Web Identik: Gambar + Judul + Keterangan + Komentar) -->
+          <div id="artwork-modal-scroll" class="modal-seamless-scroll no-scrollbar flex-1 min-h-0 w-full">
+            <!-- Gambar Karya Ukuran Besar agar Fokus (Tanpa teks badge di atas gambar) -->
+            <div class="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[340px] bg-stone-900 overflow-hidden border-b border-stone-800/80">
+              <img
+                id="modal-artwork-image"
+                src="${previewSrc}"
+                alt="Foto Karya ${this.escapeAttr(art.title)}"
+                loading="eager"
+                decoding="async"
+                referrerpolicy="no-referrer"
+                class="w-full h-full object-cover"
+              />
+              <div class="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-stone-950 via-stone-950/35 to-transparent pointer-events-none"></div>
 
-            ${
-              nextArt && nextArt.id !== art.id
-                ? `
-              <button
-                type="button"
-                id="btn-next-artwork"
-                aria-label="Fokus ke Karya Berikutnya (${this.escapeAttr(nextArt.title)})"
-                title="Transisi Kamera ke ${this.escapeAttr(nextArt.title)}"
-                class="absolute right-3.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/65 hover:bg-amber-500 backdrop-blur-md border border-white/25 hover:border-amber-300 text-white hover:text-stone-950 flex items-center justify-center transition-all shadow-lg cursor-pointer"
-              >
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
-                </svg>
-              </button>
-            `
-                : ''
-            }
-
-            <!-- Tombol Tutup Minimalis (Close Icon Button) -->
-            <button
-              type="button"
-              id="btn-close-artwork-modal"
-              aria-label="Tutup Pop Up Karya"
-              title="Tutup"
-              class="absolute top-3.5 right-3.5 w-9 h-9 rounded-full bg-black/65 hover:bg-rose-600/90 backdrop-blur-md border border-white/25 text-white flex items-center justify-center transition-all shadow-lg cursor-pointer"
-            >
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M6 18L18 6" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Area Scrollable Minimalis & Profesional (Tanpa Tanda Scrollbar) -->
-          <div class="no-scrollbar flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-            <!-- Baris Header Karya + Tombol Keranjang & WhatsApp Hanya Icon -->
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0 space-y-1">
-                <h2 id="modal-artwork-title" class="text-lg sm:text-xl font-bold tracking-tight text-white leading-snug">
-                  ${this.escapeHtml(art.title)}
-                </h2>
-                <div class="text-xs text-stone-400">
-                  <span class="text-stone-200 font-medium">${this.escapeHtml(art.creator)}</span> · ${this.escapeHtml(art.school)}
-                </div>
-                <div class="text-sm font-bold font-mono tabular-nums text-amber-400 pt-0.5">
-                  ${formatIDR(art.price)}
-                </div>
-              </div>
-
-              <!-- Tombol Aksi Hanya Icon (Keranjang & WhatsApp) -->
-              <div class="flex items-center gap-2 shrink-0">
+              ${
+                prevArt && prevArt.id !== art.id
+                  ? `
                 <button
                   type="button"
-                  id="btn-modal-add-cart"
-                  aria-label="Tambah ke Keranjang"
-                  title="Tambah ke Keranjang"
-                  class="relative group w-11 h-11 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 flex items-center justify-center transition-all shadow-md cursor-pointer"
+                  id="btn-prev-artwork"
+                  aria-label="Fokus ke Karya Sebelumnya (${this.escapeAttr(prevArt.title)})"
+                  title="Transisi Kamera ke ${this.escapeAttr(prevArt.title)}"
+                  class="absolute left-3 bottom-3 w-9 h-9 rounded-full bg-black/65 hover:bg-amber-500 backdrop-blur-md border border-white/25 hover:border-amber-300 text-white hover:text-stone-950 flex items-center justify-center transition-all shadow-lg cursor-pointer"
                 >
-                  <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <circle cx="9" cy="21" r="1.5" />
-                    <circle cx="19" cy="21" r="1.5" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6" />
                   </svg>
                 </button>
+              `
+                  : ''
+              }
 
-                <a
-                  href="${waUrl}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  id="btn-modal-whatsapp"
-                  aria-label="Hubungi Pencipta via WhatsApp"
-                  title="Hubungi via WhatsApp"
-                  class="relative group w-11 h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all shadow-md"
+              ${
+                nextArt && nextArt.id !== art.id
+                  ? `
+                <button
+                  type="button"
+                  id="btn-next-artwork"
+                  aria-label="Fokus ke Karya Berikutnya (${this.escapeAttr(nextArt.title)})"
+                  title="Transisi Kamera ke ${this.escapeAttr(nextArt.title)}"
+                  class="absolute right-3 bottom-3 w-9 h-9 rounded-full bg-black/65 hover:bg-amber-500 backdrop-blur-md border border-white/25 hover:border-amber-300 text-white hover:text-stone-950 flex items-center justify-center transition-all shadow-lg cursor-pointer"
                 >
-                  <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 14.01c-.24.68-1.41 1.3-1.95 1.38-.5.08-1.13.11-1.83-.11-.42-.13-.97-.31-1.67-.61-2.94-1.27-4.86-4.25-5.01-4.45-.15-.2-1.2-1.59-1.2-3.04 0-1.45.76-2.16 1.03-2.46.27-.3.59-.37.79-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.24.59.82 2.01.89 2.16.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.35.07.12.07.72-.17 1.4z"/>
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6" />
                   </svg>
-                </a>
-              </div>
+                </button>
+              `
+                  : ''
+              }
             </div>
 
-            <!-- Deskripsi Karya Minimalis -->
-            <p id="modal-artwork-description" class="text-xs sm:text-sm text-stone-300 leading-relaxed">
-              ${this.escapeHtml(art.description)}
-            </p>
+            <!-- Konten Detail, Keterangan & Komentar dalam Alur Scroll Tunggal -->
+            <div class="p-4 sm:p-6 pb-7 space-y-4">
+              <!-- Baris Header Karya + Tombol Keranjang & WhatsApp Hanya Icon -->
+              <div class="flex items-start justify-between gap-3 sm:gap-4">
+                <div class="min-w-0 space-y-1">
+                  <h2 id="modal-artwork-title" class="text-base sm:text-xl font-bold tracking-tight text-white leading-snug">
+                    ${this.escapeHtml(art.title)}
+                  </h2>
+                  <div class="text-xs text-stone-400 leading-relaxed">
+                    <span class="text-stone-200 font-medium">${this.escapeHtml(art.creator)}</span> · ${this.escapeHtml(art.school)}${art.region ? ` · ${this.escapeHtml(art.region)}` : ''}
+                  </div>
+                  <div class="text-sm font-bold font-mono tabular-nums text-amber-400 pt-0.5">
+                    ${formatIDR(art.price)}
+                  </div>
+                </div>
 
-            <!-- Komentar Apresiasi Minimalis (Hanya Nama dan Pesan) -->
-            <section
-              id="artwork-comments-section"
-              aria-label="Komentar Apresiasi"
-              class="pt-4 border-t border-stone-800/80 space-y-3"
-            >
-              <div class="flex items-center justify-between">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Komentar Apresiasi
-                </h3>
-                <span id="comment-count-badge" class="text-[11px] font-mono text-stone-400">
-                  ${comments.length} Komentar
-                </span>
+                <!-- Tombol Aksi Hanya Icon (Keranjang & WhatsApp) -->
+                <div class="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    id="btn-modal-add-cart"
+                    aria-label="Tambah ke Keranjang"
+                    title="Tambah ke Keranjang"
+                    class="relative group w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-500 hover:bg-amber-400 text-stone-950 flex items-center justify-center transition-all shadow-md cursor-pointer"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                      <circle cx="9" cy="21" r="1.5" />
+                      <circle cx="19" cy="21" r="1.5" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                    </svg>
+                  </button>
+
+                  <a
+                    href="${waUrl}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    id="btn-modal-whatsapp"
+                    aria-label="Hubungi Pencipta via WhatsApp"
+                    title="Hubungi via WhatsApp"
+                    class="relative group w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center transition-all shadow-md"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.82 14.01c-.24.68-1.41 1.3-1.95 1.38-.5.08-1.13.11-1.83-.11-.42-.13-.97-.31-1.67-.61-2.94-1.27-4.86-4.25-5.01-4.45-.15-.2-1.2-1.59-1.2-3.04 0-1.45.76-2.16 1.03-2.46.27-.3.59-.37.79-.37.2 0 .4 0 .57.01.18.01.43-.07.67.51.24.59.82 2.01.89 2.16.07.15.12.32.02.52-.1.2-.15.32-.3.49-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12.99 2.06 1.3 2.36 1.45.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.4-.25.67-.15.27.1 1.73.82 2.03.97.3.15.5.22.57.35.07.12.07.72-.17 1.4z"/>
+                    </svg>
+                  </a>
+                </div>
               </div>
 
-              <!-- Form Komentar Minimalis: Hanya Nama & Pesan -->
-              <form id="form-artwork-comment" class="flex flex-col sm:flex-row gap-2">
-                <input
-                  id="comment-visitor-name"
-                  type="text"
-                  required
-                  value="${this.escapeAttr(this.draftVisitorName)}"
-                  placeholder="Nama Anda"
-                  class="sm:w-44 px-3 py-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-white placeholder-stone-500 focus:border-amber-400 focus:outline-none"
-                />
-                <div class="flex-1 flex gap-2">
+              <!-- Keterangan / Deskripsi Karya Lengkap (Tampil Sama di Mobile & Web) -->
+              <p id="modal-artwork-description" class="text-[13px] sm:text-sm text-stone-300 leading-relaxed">
+                ${this.escapeHtml(art.description)}
+              </p>
+
+              <!-- Komentar Apresiasi & Ulasan Kurator (Alur Scroll Seamless Tanpa Kotak Scroll Bertumpuk) -->
+              <section
+                id="artwork-comments-section"
+                aria-label="Komentar Apresiasi"
+                class="pt-4 border-t border-stone-800/80 space-y-3"
+              >
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold uppercase tracking-wider text-stone-400">
+                    Komentar Apresiasi
+                  </h3>
+                  <span id="comment-count-badge" class="text-[11px] font-mono text-stone-400">
+                    ${comments.length} Komentar
+                  </span>
+                </div>
+
+                <!-- Form Komentar Minimalis: Hanya Nama & Pesan -->
+                <form id="form-artwork-comment" class="flex flex-col sm:flex-row gap-2">
                   <input
-                    id="comment-message-input"
+                    id="comment-visitor-name"
                     type="text"
                     required
-                    placeholder="Tulis pesan apresiasi..."
-                    class="flex-1 px-3 py-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-white placeholder-stone-500 focus:border-amber-400 focus:outline-none"
+                    value="${this.escapeAttr(this.draftVisitorName)}"
+                    placeholder="Nama Anda"
+                    class="sm:w-44 px-3 py-2.5 sm:py-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-white placeholder-stone-500 focus:border-amber-400 focus:outline-none"
                   />
-                  <button
-                    type="submit"
-                    id="btn-submit-comment"
-                    class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shrink-0 transition-colors"
-                  >
-                    Kirim
-                  </button>
-                </div>
-              </form>
+                  <div class="flex-1 flex gap-2">
+                    <input
+                      id="comment-message-input"
+                      type="text"
+                      required
+                      placeholder="Tulis pesan apresiasi..."
+                      class="flex-1 px-3 py-2.5 sm:py-2 rounded-xl bg-stone-900 border border-stone-800 text-xs text-white placeholder-stone-500 focus:border-amber-400 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      id="btn-submit-comment"
+                      class="px-4 py-2.5 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shrink-0 transition-colors cursor-pointer"
+                    >
+                      Kirim
+                    </button>
+                  </div>
+                </form>
 
-              <!-- Daftar Komentar Minimalis (Hanya Nama & Pesan, Tanpa Tanda Scroll) -->
-              <div id="artwork-comments-list" class="no-scrollbar space-y-2 max-h-44 overflow-y-auto">
-                ${renderCommentsHtml(comments)}
-              </div>
-            </section>
+                <!-- Daftar Komentar Lengkap (Mengalir Langsung di Kontainer Scroll Utama) -->
+                <div id="artwork-comments-list" class="space-y-2.5">
+                  ${renderCommentsHtml(comments)}
+                </div>
+              </section>
+            </div>
           </div>
         </article>
       </div>
@@ -1761,10 +1766,22 @@ export class UIOverlayController {
       });
     }
 
-    for (const evtName of ['pointerdown', 'pointermove', 'pointerup', 'wheel']) {
-      backdropEl?.addEventListener(evtName, (e) => {
-        e.stopPropagation();
-      });
+    for (const evtName of [
+      'pointerdown',
+      'pointermove',
+      'pointerup',
+      'touchstart',
+      'touchmove',
+      'touchend',
+      'wheel',
+    ]) {
+      backdropEl?.addEventListener(
+        evtName,
+        (e) => {
+          e.stopPropagation();
+        },
+        { passive: true },
+      );
     }
     dialogEl?.addEventListener('click', (e) => {
       e.stopPropagation();

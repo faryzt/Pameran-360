@@ -13,6 +13,16 @@ function isAtAdminRoute(): boolean {
   );
 }
 
+function isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  const narrowViewport = window.matchMedia?.('(max-width: 767px)')?.matches ?? false;
+  const coarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches ?? false;
+  const mobileUa = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent || '',
+  );
+  return narrowViewport || coarsePointer || mobileUa;
+}
+
 async function bootstrapNusantara360() {
   const uiRoot =
     document.getElementById('app-ui') ||
@@ -121,25 +131,39 @@ async function bootstrapNusantara360() {
     galleryStore.getState().setRoom(normalizeRoomId(roomParam));
   }
 
+  const mobile = isMobileDevice();
   const options = new xb.Options();
-  options.setAppTitle('Pameran Virtual');
-  options.setAppDescription(
-    'Pameran Virtual 360° — Galeri Karya Pelajar Indonesia',
-  );
-  if ((options as any).simulator?.instructions) {
+  options.setAppTitle('');
+  options.setAppDescription('');
+
+  if (mobile) {
+    options.enableSimulator = false;
+    if (options.xrButton) {
+      options.xrButton.enabled = false;
+      options.xrButton.showEnterSimulatorButton = false;
+      (options.xrButton as any).showStartArButton = false;
+      (options.xrButton as any).showStartVrButton = false;
+    }
+  } else if ((options as any).simulator?.instructions) {
     (options as any).simulator.instructions.enabled = false;
   }
 
   xb.add(sceneScript);
   await xb.init(options);
 
-  // Clean up any default simulator keyboard overlay elements injected into body so they never overlap the 360° HUD
+  // Clean up any default simulator keyboard overlay elements (and VR button on mobile)
   const hideSimOverlays = () => {
     for (const el of Array.from(document.body.children)) {
       const tag = el.tagName.toLowerCase();
       if (tag.includes('-') && (tag.includes('simulator') || tag.includes('instruction'))) {
         (el as HTMLElement).style.display = 'none';
       }
+    }
+    if (mobile || window.innerWidth < 768) {
+      document.getElementById('XRButtonWrapper')?.remove();
+      document
+        .querySelectorAll('.XRButton, #VRButton, #ARButton')
+        .forEach((btn) => btn.remove());
     }
   };
   hideSimOverlays();
